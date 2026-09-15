@@ -1,0 +1,40 @@
+﻿Phase 7 verification
+Changed branch/field: evidence-first Deep Research LangGraph and queued worker service
+MODIFIED_FILE: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase7-verification\MODIFIED_FILE
+DIFF_FILE: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase7-verification\DIFF_FILE
+VERIFICATION.txt: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase7-verification\VERIFICATION.txt
+ROLLBACK.sh: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase7-verification\ROLLBACK.sh
+BASELINE command: .\.venv\Scripts\python.exe -m pytest backend/tests -q --ignore=backend/tests/test_deep_research.py
+BASELINE literal output/result:
+...................................s.........................            [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:53
+  C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+.venv\Lib\site-packages\langgraph\cache\base\__init__.py:8
+  C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\.venv\Lib\site-packages\langgraph\cache\base\__init__.py:8: LangChainPendingDeprecationWarning: The default value of `allowed_objects` will change in a future version. Pass an explicit value (e.g., allowed_objects='messages' or allowed_objects='core') to suppress this warning.
+    from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+BASELINE exit status: 0
+MODIFIED command: .\.venv\Scripts\python.exe -m pytest backend/tests/test_deep_research.py -q
+MODIFIED literal output/result:
+...                                                                      [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:53
+  C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+.venv\Lib\site-packages\langgraph\cache\base\__init__.py:8
+  C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\.venv\Lib\site-packages\langgraph\cache\base\__init__.py:8: LangChainPendingDeprecationWarning: The default value of `allowed_objects` will change in a future version. Pass an explicit value (e.g., allowed_objects='messages' or allowed_objects='core') to suppress this warning.
+    from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+MODIFIED exit status: 0
+ROLLBACK command: powershell -NoProfile -ExecutionPolicy Bypass -Command "$sb=[scriptblock]::Create((Get-Content -LiteralPath 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase7-verification\ROLLBACK.sh' -Raw)); & $sb -Target 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase7-verification\ROLLBACK_TEST_COPY' -Backup 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase7-verification\BASELINE_COPY'"
+ROLLBACK literal output/result:
+RESTORED_SHA256=0062530B36AF1D00B30C89CC9AA5DE2CD42FEB9676B54C22A01F56E5B125B2CF
+ROLLBACK exit status: 0
+Restored behavior/status: ROLLBACK_TEST_COPY SHA256 0062530B36AF1D00B30C89CC9AA5DE2CD42FEB9676B54C22A01F56E5B125B2CF equals BASELINE_COPY SHA256 0062530B36AF1D00B30C89CC9AA5DE2CD42FEB9676B54C22A01F56E5B125B2CF; MODIFIED_FILE remains changed at SHA256 638380274DFCDE5325BF9B571968A149E0D45BEFE89C69BADEF65394A382683C.
+Original hash preserved: 0062530B36AF1D00B30C89CC9AA5DE2CD42FEB9676B54C22A01F56E5B125B2CF
