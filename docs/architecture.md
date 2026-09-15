@@ -2,9 +2,9 @@
 
 ## Development and production deployment
 
-Local development runs natively on Windows. Phase 1 and the current Phase 3
-backend work do not require Docker or external services. `DATA_MODE=mock`
-starts without API keys and test suites do not call external APIs.
+Local development runs natively on Windows. Backend tests and mock-mode API
+smoke tests do not require Docker or external services. `DATA_MODE=mock` starts
+without API keys and the default test suite does not call external APIs.
 
 The final production target is a Linux VPS using Docker Compose, Nginx and
 HTTPS. The Compose topology is deliberately retained as a future deployment
@@ -34,9 +34,10 @@ FastAPI -> ResearchTask(queued) -> Redis Queue -> Worker
                                       Worker -> PostgreSQL ResearchReport
 ```
 
-The first implementation will choose ARQ as the low-complexity queue option.
-Dramatiq and Celery remain alternatives if operations require them. The Worker,
-queue, PostgreSQL models, and LangGraph workflow are later-phase components.
+ARQ is the selected low-complexity queue option for the Linux deployment entry
+point. Dramatiq and Celery remain alternatives if operations require them. The
+local API currently uses an in-memory queue for deterministic development;
+durable production task/report updates are an explicit follow-up.
 
 ## Data-source boundaries
 
@@ -119,4 +120,4 @@ implementation ownership is in [dependency-dag.md](dependency-dag.md).
 7. Phase 7: Redis queue and Deep Research Worker.
 8. Phase 8: Frontend dashboard.
 9. Phase 9: Linux VPS Docker Compose, Nginx, HTTPS and operations.
-10. Phase 10: Integration QA and portfolio polish.
+10. Phase 10: Integration QA and portfolio polish. **Complete.**
