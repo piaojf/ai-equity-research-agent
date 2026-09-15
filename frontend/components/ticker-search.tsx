@@ -13,5 +13,5 @@ export function TickerSearch() {
     if (symbol) router.push(`/stock/${encodeURIComponent(symbol)}`);
   }
 
-  return <form className="search" onSubmit={submit}><input aria-label="Ticker" placeholder="Search ticker, e.g. NVDA" value={ticker} onChange={(event) => setTicker(event.target.value)} /><button className="button" type="submit">Search</button></form>;
+  return <form className="search" onSubmit={submit}><input aria-label="股票代码" placeholder="输入股票代码，例如 NVDA" value={ticker} onChange={(event) => setTicker(event.target.value)} /><button className="button" type="submit">开始研究</button></form>;
 }
