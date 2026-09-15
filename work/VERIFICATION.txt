@@ -1,12 +1,13 @@
-Phase 1 verification
-=====================
+Phase 2 Market Data Provider verification
+=========================================
 
 Changed branch/field
 --------------------
-branch: deployment
-field: primary_target
-modified value: Linux VPS + Docker Compose + Nginx + HTTPS
-related field: phase1_docker_validation=deferred
+branch: market_data
+field: provider_selection
+modified value: DATA_MODE=mock -> MockMarketProvider; DATA_MODE=real -> AlphaVantageMarketProvider
+related field: ALPHA_VANTAGE_API_KEY
+scope: Market Data Provider and GET /api/stocks/{ticker}
 
 Artifacts
 ---------
@@ -19,44 +20,89 @@ BASELINE
 --------
 Command: ..\.venv\Scripts\python.exe -m pytest -q
 Working directory: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\backend
-Input: local test suite; no external API calls
+Input: Phase 1 local test suite; no external API calls
 Literal result:
-ERROR tests/test_request_id.py - NameError: name 'pytest' is not defined
-!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
-Exit status: 1
-
-MODIFIED
---------
-Command: ..\.venv\Scripts\ruff.exe check app tests; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; ..\.venv\Scripts\mypy.exe app; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; ..\.venv\Scripts\python.exe -m pytest -q
-Working directory: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\backend
-Input: local source and test files; no external API calls
-Literal result:
-All checks passed!
-Success: no issues found in 10 source files
 ......                                                                   [100%]
 Exit status: 0
 
-ROLLBACK
---------
-Command: & 'C:\Program Files\Git\bin\bash.exe' 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\ROLLBACK.sh' target.txt target.txt.bak
-Working directory: temporary rollback-test copy under work
-Input: MODIFIED_FILE copy with tampered=true appended; backup retained original copy
+MODIFIED TESTS
+--------------
+Command: ..\.venv\Scripts\python.exe -m pytest -q
+Working directory: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\backend
+Input: Phase 2 local tests and MockTransport tests; no external API calls
 Literal result:
-restored C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\rollback-test\target.txt from C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\rollback-test\target.txt.bak
-{"restored":true}
-Target SHA256: C7C75226EB1B82F821A200E16DC551613C59B1CC5C9456AAC2564D281041C690
-Backup SHA256: C7C75226EB1B82F821A200E16DC551613C59B1CC5C9456AAC2564D281041C690
+............................s.                                           [100%]\n29 passed, 1 skipped
 Exit status: 0
 
-Runtime verification
---------------------
-GET http://127.0.0.1:8000/health -> HTTP 200
-GET http://127.0.0.1:8000/docs -> HTTP 200
-GET http://127.0.0.1:8000/redoc -> HTTP 200
-Observed health response included request_id and data_mode=mock.
-Observed logs included request_id, method, path, status_code, latency_ms.
-Restored behavior/status: rollback copy matched its backup hash and the changed MODIFIED_FILE remained unchanged.
+LINT
+----
+Command: ..\.venv\Scripts\ruff.exe check app tests
+Working directory: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\backend
+Literal result:
+All checks passed!
+Exit status: 0
 
-Docker verification
--------------------
-Not run by design: Phase 1 is native local development and Docker is deferred to Linux deployment.
+TYPE CHECK
+----------
+Command: ..\.venv\Scripts\mypy.exe app
+Working directory: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\backend
+Literal result:
+Success: no issues found in 22 source files
+Exit status: 0
+
+CONTRACT / INTEGRATION
+----------------------
+Command: ..\.venv\Scripts\python.exe -m pytest -m integration -q
+Input: no ALPHA_VANTAGE_API_KEY and RUN_REAL_PROVIDER_TESTS is unset
+Literal result:
+s                                                                        [100%]
+Exit status: 0
+Result: real-provider integration test skipped; no network call was made.
+
+RUNTIME
+-------
+Commands:
+GET http://127.0.0.1:8000/health
+GET http://127.0.0.1:8000/api/stocks/NVDA
+GET http://127.0.0.1:8000/docs
+GET http://127.0.0.1:8000/redoc
+Literal result:
+health=200
+stock=200
+stock response data.ticker=NVDA
+stock response quote.source=mock
+stock response history.source=mock
+stock response errors=[]
+docs=200
+redoc=200
+Exit status: 0
+Result: DATA_MODE=mock served deterministic NVDA Stock Overview with request_id.
+
+OBSERVABILITY
+-------------
+Literal result from local runtime logs:
+provider_request_completed request_id=6506f350-cb47-4ad8-987b-3b21cb8b5a5a ticker=NVDA provider=mock operation=get_quote status=success
+provider_request_completed request_id=6506f350-cb47-4ad8-987b-3b21cb8b5a5a ticker=NVDA provider=mock operation=get_history status=success
+Result: request_id, ticker, provider, operation, latency_ms, status were present; API keys were not emitted.
+
+DOCKER
+------
+Command: docker --version
+Working directory: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai
+Literal result:
+docker : The term 'docker' is not recognized as the name of a cmdlet, function, script file, or operable program.
+Exit status: 1
+Result: Docker executable is not installed or available in this Windows environment. Dockerfile was created but image build/start could not be executed locally.
+
+ROLLBACK
+--------
+Command: & 'C:\Program Files\Git\bin\bash.exe' 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\ROLLBACK.sh' 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\rollback-test\target.txt' 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\rollback-test\target.txt.bak'
+Input: copied MODIFIED_FILE to another target, appended tampered=true, retained backup
+Literal result:
+restored C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\rollback-test\target.txt from C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\rollback-test\target.txt.bak
+{"target_hash":"BCC937208D3D11708937587688EFD54FE72F8DF9872B145DA981E8B14E4A5B0F","backup_hash":"BCC937208D3D11708937587688EFD54FE72F8DF9872B145DA981E8B14E4A5B0F","restored":true}
+Exit status: 0
+Result: rollback copy restored exactly; MODIFIED_FILE remained changed.
+
+Original MODIFIED_FILE SHA256: C7C75226EB1B82F821A200E16DC551613C59B1CC5C9456AAC2564D281041C690
+Modified MODIFIED_FILE SHA256: BCC937208D3D11708937587688EFD54FE72F8DF9872B145DA981E8B14E4A5B0F

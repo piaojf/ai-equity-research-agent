@@ -14,7 +14,17 @@ class StructuredFormatter(logging.Formatter):
         request_id = getattr(record, "request_id", None)
         if request_id is not None:
             fields["request_id"] = request_id
-        for field_name in ("method", "path", "status_code", "latency_ms"):
+        for field_name in (
+            "method",
+            "path",
+            "status_code",
+            "latency_ms",
+            "ticker",
+            "provider",
+            "operation",
+            "status",
+            "error_code",
+        ):
             value = getattr(record, field_name, None)
             if value is not None:
                 fields[field_name] = value
@@ -28,6 +38,8 @@ def configure_logging(log_level: str) -> None:
     handler.setFormatter(StructuredFormatter())
     root_logger.addHandler(handler)
     root_logger.setLevel(log_level.upper())
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:

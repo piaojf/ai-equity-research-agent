@@ -12,7 +12,9 @@ Windows workstation
 ```
 
 The backend starts with `DATA_MODE=mock` and does not require external API
-keys. Tests never call external services.
+keys. Tests never call external services. Phase 2 adds a standalone backend
+Dockerfile only because the phase acceptance requires a backend image check;
+full Compose and Linux deployment remain deferred.
 
 ## Final Linux deployment target
 
@@ -67,6 +69,61 @@ External APIs are accessed only through Provider interfaces:
 Yahoo is not the universal source for fundamentals. Financial facts and filing
 content remain separate provider responsibilities.
 
+## Phase 2 market data architecture
+
+The Stock Overview request follows this path:
+
+```text
+GET /api/stocks/{ticker}
+        ↓
+MarketService
+        ↓
+MarketProviderRegistry
+        ↓
+MarketDataProvider
+        ↓
+PriceSnapshot + HistoricalPricePoint
+        ↓
+ApiResponse[StockOverview]
+```
+
+The provider protocol is intentionally small:
+
+```python
+class MarketDataProvider(Protocol):
+    name: str
+    source_url: HttpUrl | None
+
+    async def get_quote(self, ticker: str) -> PriceSnapshot: ...
+    async def get_history(
+        self, ticker: str, period: str
+    ) -> list[HistoricalPricePoint]: ...
+```
+
+Phase 2 includes a deterministic `MockMarketProvider` for NVDA, AAPL, MSFT,
+TSLA, and AMD. It uses fixed OHLCV values and always labels responses with
+`source="mock"`.
+
+The only real provider is `AlphaVantageMarketProvider`. It maps
+`GLOBAL_QUOTE` and `TIME_SERIES_DAILY` into internal Pydantic schemas, marks
+daily quote data as delayed/latest-available, and never includes the API key
+in `source_url`. Alpha Vantage documents `GLOBAL_QUOTE` and daily OHLCV
+endpoints as requiring an API key; realtime and historical freshness are
+represented explicitly rather than inferred.[Alpha Vantage API Documentation](https://www.alphavantage.co/documentation/)
+
+Provider selection is configuration-driven:
+
+```text
+DATA_MODE=mock   → MockMarketProvider
+DATA_MODE=real   → AlphaVantageMarketProvider
+DATA_MODE=hybrid → AlphaVantageMarketProvider when configured,
+                   otherwise explicitly labelled MockMarketProvider
+```
+
+The service retries timeout, rate-limit, and provider-unavailable errors using
+the configured two-retry exponential-backoff policy. Provider exceptions are
+mapped to domain errors before reaching the API response.
+
 ## Explainable scoring
 
 Core numeric scores are calculated by Python. LLM output is limited to
@@ -115,7 +172,8 @@ class Citation(BaseModel):
 
 1. Phase 1: FastAPI foundation, configuration, logging, request IDs, errors,
    health endpoint, base schemas, pytest, Ruff, mypy.
-2. Phase 2: Market price Provider and Stock Overview API.
+2. Phase 2: Market price Provider, Provider Registry, Stock Overview API, and
+   contract tests.
 3. Phase 3: SEC Company Facts normalization and explainable scoring.
 4. Phase 4: LangGraph Research Agent and structured output.
 5. Phase 5: PostgreSQL persistence and repositories.
