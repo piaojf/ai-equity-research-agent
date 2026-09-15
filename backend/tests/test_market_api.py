@@ -30,7 +30,7 @@ def test_stock_overview_api_returns_invalid_ticker_error(client: TestClient) -> 
 
 def test_real_mode_without_key_returns_configuration_error() -> None:
     application = create_app()
-    settings = Settings(data_mode="real")
+    settings = Settings(data_mode="real", market_provider="alpha_vantage")
     application.dependency_overrides[get_market_service] = lambda: MarketService(
         MarketProviderRegistry(settings), settings
     )

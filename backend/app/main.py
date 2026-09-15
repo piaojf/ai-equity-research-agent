@@ -3,10 +3,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.routes_deep_research import router as deep_research_router
+from app.api.routes_research import router as research_router
 from app.api.routes_sec import router as sec_router
 from app.api.routes_stocks import router as stocks_router
 from app.core.config import get_settings
@@ -40,9 +42,21 @@ def create_app() -> FastAPI:
         description="Backend foundation for the AI Equity Research Agent.",
         lifespan=lifespan,
     )
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            origin.strip()
+            for origin in settings.cors_origins.split(",")
+            if origin.strip()
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     application.add_middleware(RequestIdMiddleware)
     application.include_router(stocks_router)
     application.include_router(sec_router)
+    application.include_router(research_router)
     application.include_router(deep_research_router)
 
     @application.get(

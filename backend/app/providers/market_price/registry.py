@@ -3,6 +3,7 @@ from app.providers.exceptions import ProviderConfigurationError
 from app.providers.market_price.alpha_vantage_provider import AlphaVantageMarketProvider
 from app.providers.market_price.base import MarketDataProvider
 from app.providers.market_price.mock_provider import MockMarketProvider
+from app.providers.market_price.yahoo_provider import YahooFinanceMarketProvider
 
 
 class MarketProviderRegistry:
@@ -12,6 +13,16 @@ class MarketProviderRegistry:
     def get_provider(self) -> MarketDataProvider:
         if self.settings.data_mode == "mock":
             return MockMarketProvider()
+        if self.settings.data_mode == "hybrid":
+            if (
+                self.settings.market_provider == "yahoo"
+                or self.settings.alpha_vantage_api_key is None
+            ):
+                return MockMarketProvider()
+        if self.settings.market_provider == "yahoo":
+            return YahooFinanceMarketProvider(
+                timeout_seconds=self.settings.provider_timeout_seconds,
+            )
         if self.settings.market_provider != "alpha_vantage":
             raise ProviderConfigurationError(
                 f"Unsupported market provider: {self.settings.market_provider}."

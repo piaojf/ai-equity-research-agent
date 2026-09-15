@@ -36,5 +36,8 @@ h2 { letter-spacing: -0.04em; margin: 0; }
 .button { background: var(--ink); border: 0; border-radius: 999px; color: white; display: inline-block; font-weight: 700; padding: 13px 20px; }
 .button.alt { background: transparent; border: 1px solid var(--line); color: var(--ink); }
 .stack { display: grid; gap: 14px; }
+.search { display: flex; gap: 10px; max-width: 520px; }
+.search input { background: var(--card); border: 1px solid var(--line); border-radius: 999px; color: var(--ink); flex: 1; min-width: 0; padding: 13px 16px; }
+.button:disabled { cursor: wait; opacity: .55; }
 .pill { background: var(--mint); border-radius: 999px; display: inline-block; font-size: 12px; padding: 7px 11px; }
 @media (max-width: 800px) { .hero, .grid { grid-template-columns: 1fr; } .shell { padding: 22px 18px 50px; } .nav { display: none; } }

@@ -62,9 +62,11 @@ Route -> MarketService -> MarketProviderRegistry -> MarketDataProvider
       -> PriceSnapshot + HistoricalPricePoint -> ApiResponse[StockOverview]
 ```
 
-Phase 2 has deterministic mock data and an Alpha Vantage adapter. Provider
-selection is configuration-driven and never silently falls back in `real`
-mode. Provider errors are converted to domain errors before reaching a route.
+Phase 2 has deterministic mock data plus Yahoo Finance and Alpha Vantage
+adapters. The default real-mode adapter is keyless Yahoo Finance; Alpha Vantage
+remains available when an API key is configured. Provider selection is
+configuration-driven and never silently falls back in `real` mode. Provider
+errors are converted to domain errors before reaching a route.
 
 ## Phase 3 financial data and scoring
 

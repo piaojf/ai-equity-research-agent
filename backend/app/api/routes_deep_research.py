@@ -1,3 +1,4 @@
+import asyncio
 from functools import lru_cache
 from uuid import UUID
 
@@ -33,6 +34,7 @@ async def submit_deep_research(
     accepted = await get_deep_research_service().submit(
         request.ticker, request.question
     )
+    asyncio.create_task(get_deep_research_service().run_once())
     return ApiResponse(request_id=get_request_id(), data=accepted)
 
 

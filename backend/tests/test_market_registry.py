@@ -8,6 +8,7 @@ from app.providers.market_price.alpha_vantage_provider import (
 )
 from app.providers.market_price.mock_provider import MockMarketProvider
 from app.providers.market_price.registry import MarketProviderRegistry
+from app.providers.market_price.yahoo_provider import YahooFinanceMarketProvider
 
 
 def test_mock_mode_selects_mock_provider() -> None:
@@ -17,7 +18,9 @@ def test_mock_mode_selects_mock_provider() -> None:
 
 
 def test_real_mode_without_key_raises_configuration_error() -> None:
-    registry = MarketProviderRegistry(Settings(data_mode="real"))
+    registry = MarketProviderRegistry(
+        Settings(data_mode="real", market_provider="alpha_vantage")
+    )
 
     with pytest.raises(ProviderConfigurationError, match="API_KEY"):
         registry.get_provider()
@@ -33,9 +36,16 @@ def test_hybrid_mode_without_key_explicitly_selects_mock() -> None:
 def test_real_mode_with_key_selects_alpha_vantage() -> None:
     settings = Settings(
         data_mode="real",
+        market_provider="alpha_vantage",
         alpha_vantage_api_key=SecretStr("test-key"),
     )
 
     provider = MarketProviderRegistry(settings).get_provider()
 
     assert isinstance(provider, AlphaVantageMarketProvider)
+
+
+def test_real_mode_defaults_to_keyless_yahoo_provider() -> None:
+    provider = MarketProviderRegistry(Settings(data_mode="real")).get_provider()
+
+    assert isinstance(provider, YahooFinanceMarketProvider)

@@ -39,6 +39,23 @@ class SECAskService:
         self.embedder = embedder
         self.vector_store = vector_store
         self.answerer = answerer
+        self._ingested_tickers: set[str] = set()
+
+    async def ensure_latest_filing_ingested(self, ticker: str) -> None:
+        """Ingest one latest filing for local real-provider demonstrations."""
+
+        if self.provider is None:
+            return
+        normalized = ticker.strip().upper()
+        if normalized in self._ingested_tickers:
+            return
+        filings = await self.provider.list_filings(normalized, ["10-K", "10-Q"])
+        if not filings:
+            return
+        filing = filings[0]
+        text = await self.provider.fetch_filing(filing)
+        await self.ingest(filing, text)
+        self._ingested_tickers.add(normalized)
 
     async def ingest(self, filing: FilingMetadata, text: str) -> list[FilingChunk]:
         chunks = chunk_filing(filing, text)

@@ -1,0 +1,21 @@
+﻿Local demo verification
+Changed branch/field: frontend ESLint flat-config adapter required for real npm lint execution
+MODIFIED_FILE: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\local-demo-verification\MODIFIED_FILE
+DIFF_FILE: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\local-demo-verification\DIFF_FILE
+VERIFICATION.txt: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\local-demo-verification\VERIFICATION.txt
+ROLLBACK.sh: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\local-demo-verification\ROLLBACK.sh
+Original hash preserved: 6BD0652AF619B16367BE4FCF7EF1E717A47801F87289320532D1260FB20F11E8
+
+BASELINE command: npm run lint
+BASELINE input: HEAD frontend/eslint.config.mjs
+BASELINE literal output/result: ERR_MODULE_NOT_FOUND for eslint-config-next/core-web-vitals; npm lint exit 2
+BASELINE exit status: 2
+MODIFIED command: npm run lint
+MODIFIED input: flat config using @next/eslint-plugin-next.flatConfig.coreWebVitals and TypeScript parser
+MODIFIED literal output/result: npm run lint completed with no output after the script header
+MODIFIED exit status: 0
+ROLLBACK command: powershell -NoProfile -Command "$sb=[scriptblock]::Create((Get-Content 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\local-demo-verification\ROLLBACK.sh' -Raw)); & $sb -Target 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\local-demo-verification\ROLLBACK_TEST_COPY' -Backup 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\local-demo-verification\BASELINE_COPY'"
+ROLLBACK input: ROLLBACK_TEST_COPY plus BASELINE_COPY
+ROLLBACK literal output/result: RESTORED_SHA256=6BD0652AF619B16367BE4FCF7EF1E717A47801F87289320532D1260FB20F11E8; MATCH=True
+ROLLBACK exit status: 0
+Restored behavior/status: ROLLBACK_TEST_COPY equals BASELINE_COPY; MODIFIED_FILE remains changed at SHA256 CACEBAF761705A8206026487F560E4E8A148D8F873FF0CC126450C4F9D7BCD18.

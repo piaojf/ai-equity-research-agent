@@ -10,9 +10,12 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     app_env: str = "development"
     data_mode: Literal["mock", "real", "hybrid"] = Field(default="mock")
-    market_provider: Literal["alpha_vantage"] = "alpha_vantage"
+    market_provider: Literal["yahoo", "alpha_vantage"] = "yahoo"
     alpha_vantage_api_key: SecretStr | None = None
     sec_user_agent: SecretStr | None = None
+    openai_api_key: SecretStr | None = None
+    openai_model: str = "gpt-4o-mini"
+    openai_base_url: str = "https://api.openai.com/v1"
     provider_timeout_seconds: float = Field(default=10.0, gt=0)
     provider_max_retries: int = Field(default=2, ge=0, le=5)
     provider_retry_delay_seconds: float = Field(default=1.0, ge=0)

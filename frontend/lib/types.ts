@@ -18,8 +18,9 @@ export interface Citation { ticker: string; filing_type: string; filing_date: st
 export interface SecResearchResult { status: "available" | "not_configured" | "unavailable"; summary: string; citations: Citation[]; limitations: string[]; }
 export interface EquityResearchReport { ticker: string; generated_at: string; summary: string; fundamental_score: ScoreBreakdown; growth_score: ScoreBreakdown; valuation_score: ScoreBreakdown; risk_score: ScoreBreakdown; sentiment_score?: ScoreBreakdown; fundamental_view: string; valuation_view: string; sentiment: string; thesis: string[]; risks: string[]; catalysts: string[]; scores: Record<string, ScoreBreakdown>; overall_score: ScoreBreakdown; market_data?: StockOverview; financial_metrics?: FinancialMetrics; news: NewsAnalysis; sec_research?: SecResearchResult; key_metrics: Record<string, number | null>; data_sources: string[]; confidence: Confidence; errors: string[]; limitations: string[]; }
 export interface ResearchInput { ticker: string; question?: string; include_sec_research?: boolean; }
-export interface Evidence { id: string; source: string; title: string; url: string; published_at?: string; summary: string; evidence_type: "market" | "news" | "filing" | "announcement"; }
-export interface MajorEvent { date: string; title: string; price_change?: number; evidence_ids: string[]; }
-export interface DeepResearchTask { task_id: string; request_id: string; ticker: string; question: string; status: "queued" | "running" | "completed" | "failed"; current_stage: string; major_events: MajorEvent[]; evidence: Evidence[]; conclusion?: string; confidence: Confidence; limitations: string[]; error?: string; }
+export interface Evidence { evidence_id: string; source: string; title: string; url?: string; published_at?: string; summary: string; evidence_type: "market" | "news" | "announcement" | "sec"; }
+export interface MajorEvent { event_date?: string; description: string; evidence_ids: string[]; }
+export interface DeepResearchReport { ticker: string; question: string; conclusion: string; major_events: MajorEvent[]; evidence: Evidence[]; confidence: Confidence; limitations: string[]; }
+export interface DeepResearchTask { task_id: string; status: "queued" | "running" | "completed" | "failed"; report?: DeepResearchReport; error?: string; }
 export interface SECAskRequest { ticker: string; question: string; filing_type?: string; limit?: number; }
 export interface SECAskResult { ticker: string; question: string; answer: string; citations: Citation[]; confidence: Confidence; limitations: string[]; }

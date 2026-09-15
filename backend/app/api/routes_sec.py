@@ -3,7 +3,11 @@ from functools import lru_cache
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
+from app.core.config import get_settings
+from app.core.errors import AppError
 from app.core.request_id import get_request_id
+from app.providers.exceptions import ProviderError
+from app.providers.sec.edgar import SECEDGARProvider
 from app.rag.embeddings import DeterministicEmbeddingProvider
 from app.rag.service import SECAskResult, SECAskService
 from app.rag.vector_store import InMemoryVectorStore
@@ -21,8 +25,20 @@ class SECAskRequest(BaseModel):
 
 @lru_cache(maxsize=1)
 def get_sec_ask_service() -> SECAskService:
+    settings = get_settings()
+    provider = None
+    if (
+        settings.data_mode == "real"
+        and settings.sec_user_agent is not None
+        and settings.sec_user_agent.get_secret_value().strip()
+    ):
+        provider = SECEDGARProvider(
+            settings.sec_user_agent,
+            ticker_ciks={"NVDA": "1045810", "AMD": "2488"},
+            timeout_seconds=settings.provider_timeout_seconds,
+        )
     return SECAskService(
-        provider=None,
+        provider=provider,
         embedder=DeterministicEmbeddingProvider(),
         vector_store=InMemoryVectorStore(),
     )
@@ -30,6 +46,15 @@ def get_sec_ask_service() -> SECAskService:
 
 @router.post("/ask", response_model=ApiResponse[SECAskResult])
 async def ask_sec(request: SECAskRequest) -> ApiResponse[SECAskResult]:
+    try:
+        await get_sec_ask_service().ensure_latest_filing_ingested(request.ticker)
+    except ProviderError as exc:
+        raise AppError(
+            code=exc.code,
+            message=exc.message,
+            status_code=exc.status_code,
+            retryable=exc.retryable,
+        ) from exc
     result = await get_sec_ask_service().ask(
         request.ticker,
         request.question,

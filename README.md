@@ -83,6 +83,8 @@ flowchart LR
 | --- | --- | --- |
 | GET | `/health` | Service and data-mode health |
 | GET | `/api/stocks/{ticker}` | Quote and historical price overview |
+| POST | `/api/research` | Run the structured LangGraph research workflow |
+| GET | `/api/research/{ticker}` | Run the workflow for a ticker from the dashboard |
 | POST | `/api/sec/ask` | Citation-aware SEC question answering |
 | POST | `/api/deep-research` | Queue a long-running research task; returns HTTP 202 |
 | GET | `/api/deep-research/{task_id}` | Poll task status and completed report |
