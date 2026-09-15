@@ -1,0 +1,20 @@
+﻿Phase 3B verification
+Changed branch/field: deterministic scoring formulas and explainable ScoreBreakdown components
+MODIFIED_FILE: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase3b-verification\MODIFIED_FILE
+DIFF_FILE: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase3b-verification\DIFF_FILE
+VERIFICATION.txt: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase3b-verification\VERIFICATION.txt
+ROLLBACK.sh: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\phase3b-verification\ROLLBACK.sh
+BASELINE command: .\.venv\Scripts\python.exe -m pytest backend/tests -q --ignore=backend/tests/test_scoring.py
+BASELINE input: repository test suite excluding the newly added scoring test
+BASELINE literal output/result: ..............................s. [100%]
+BASELINE exit status: 0
+MODIFIED command: .\.venv\Scripts\python.exe -m pytest backend/tests/test_scoring.py -q
+MODIFIED input: full, missing, invalid-range, and explainability fixtures
+MODIFIED literal output/result: ........ [100%]
+MODIFIED exit status: 0
+ROLLBACK command: powershell -NoProfile -Command "$sb=[scriptblock]::Create((Get-Content 'work\phase3b-verification\ROLLBACK.sh' -Raw)); & $sb -Target 'work\phase3b-verification\ROLLBACK_TEST_COPY' -Backup 'work\phase3b-verification\BASELINE_COPY'"
+ROLLBACK input: ROLLBACK_TEST_COPY plus BASELINE_COPY
+ROLLBACK literal output/result: RESTORED_SHA256=191E1C2E8F995DC3C81F635F31E5FEE59280D96F4CFB61320E1AA3655D98F89F
+ROLLBACK exit status: 0
+Restored behavior/status: ROLLBACK_TEST_COPY SHA256 191E1C2E8F995DC3C81F635F31E5FEE59280D96F4CFB61320E1AA3655D98F89F equals BASELINE_COPY SHA256 191E1C2E8F995DC3C81F635F31E5FEE59280D96F4CFB61320E1AA3655D98F89F; MODIFIED_FILE remains changed at SHA256 EE078F83CC42351B589CC1DD57187F1D80FD2D0A15C27D103EE1387023D6DB99.
+Original hash preserved: 191E1C2E8F995DC3C81F635F31E5FEE59280D96F4CFB61320E1AA3655D98F89F

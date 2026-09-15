@@ -59,3 +59,13 @@ class ProviderUnavailableError(ProviderError):
             retryable=True,
             status_code=503,
         )
+
+
+class FinancialDataUnavailableError(ProviderError):
+    def __init__(self, provider: str, message: str | None = None) -> None:
+        super().__init__(
+            ErrorCode.FINANCIAL_DATA_UNAVAILABLE,
+            message or f"Provider '{provider}' is unavailable.",
+            retryable=True,
+            status_code=503,
+        )

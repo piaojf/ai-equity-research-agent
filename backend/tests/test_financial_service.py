@@ -4,7 +4,7 @@ import pytest
 
 from app.core.config import Settings
 from app.core.errors import AppError, ErrorCode
-from app.providers.exceptions import ProviderUnavailableError
+from app.providers.exceptions import FinancialDataUnavailableError
 from app.providers.fundamentals.base import FinancialDataProvider
 from app.providers.fundamentals.registry import FinancialProviderRegistry
 from app.schemas.financial import FinancialMetrics
@@ -49,7 +49,7 @@ async def test_financial_service_normalizes_ticker() -> None:
 @pytest.mark.asyncio
 async def test_financial_service_maps_provider_errors() -> None:
     def fail(_: str) -> FinancialMetrics:
-        raise ProviderUnavailableError("stub", "financial data unavailable")
+        raise FinancialDataUnavailableError("stub", "financial data unavailable")
 
     service = FinancialService(
         StubRegistry(StubProvider(fail)),
@@ -59,7 +59,7 @@ async def test_financial_service_maps_provider_errors() -> None:
     with pytest.raises(AppError) as raised:
         await service.get_financials("NVDA")
 
-    assert raised.value.code == ErrorCode.MARKET_DATA_UNAVAILABLE
+    assert raised.value.code == ErrorCode.FINANCIAL_DATA_UNAVAILABLE
     assert raised.value.status_code == 503
 
 
