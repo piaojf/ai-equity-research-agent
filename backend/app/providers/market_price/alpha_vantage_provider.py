@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
-from pydantic import HttpUrl, SecretStr, TypeAdapter
+from pydantic import HttpUrl, SecretStr, TypeAdapter, ValidationError
 
 from app.providers.exceptions import (
     InvalidTickerError,
@@ -101,26 +101,32 @@ class AlphaVantageMarketProvider(MarketDataProvider):
         as_of = datetime(as_of_date.year, as_of_date.month, as_of_date.day, tzinfo=UTC)
         previous_close = self._number(raw.get("08. previous close"), "previous_close")
         change = self._number(raw.get("09. change"), "change")
-        return PriceSnapshot(
-            ticker=normalized,
-            price=self._number(raw.get("05. price"), "price"),
-            previous_close=previous_close,
-            change=change,
-            change_percent=self._number(
-                raw.get("10. change percent"),
-                "change_percent",
-            ),
-            open=self._number(raw.get("02. open"), "open"),
-            high=self._number(raw.get("03. high"), "high"),
-            low=self._number(raw.get("04. low"), "low"),
-            volume=int(self._number(raw.get("06. volume"), "volume")),
-            currency="USD",
-            as_of=as_of,
-            retrieved_at=datetime.now(UTC),
-            source=self.name,
-            source_url=self._public_source_url("GLOBAL_QUOTE", normalized),
-            is_delayed=True,
-        )
+        try:
+            return PriceSnapshot(
+                ticker=normalized,
+                price=self._number(raw.get("05. price"), "price"),
+                previous_close=previous_close,
+                change=change,
+                change_percent=self._number(
+                    raw.get("10. change percent"),
+                    "change_percent",
+                ),
+                open=self._number(raw.get("02. open"), "open"),
+                high=self._number(raw.get("03. high"), "high"),
+                low=self._number(raw.get("04. low"), "low"),
+                volume=int(self._number(raw.get("06. volume"), "volume")),
+                currency="USD",
+                as_of=as_of,
+                retrieved_at=datetime.now(UTC),
+                source=self.name,
+                source_url=self._public_source_url("GLOBAL_QUOTE", normalized),
+                is_delayed=True,
+            )
+        except ValidationError as exc:
+            raise ProviderUnavailableError(
+                self.name,
+                "Provider returned invalid quote values.",
+            ) from exc
 
     async def get_history(
         self,
@@ -151,7 +157,7 @@ class AlphaVantageMarketProvider(MarketDataProvider):
                         volume=int(self._number(values.get("5. volume"), "volume")),
                     )
                 )
-            except ValueError as exc:
+            except (ValueError, ValidationError) as exc:
                 raise ProviderUnavailableError(
                     self.name,
                     "Provider returned invalid OHLC values.",

@@ -123,6 +123,12 @@ class MarketService:
             normalized,
             lambda: provider.get_history(normalized, _PERIOD),
         )
+        if not points:
+            raise AppError(
+                code=ErrorCode.MARKET_DATA_UNAVAILABLE,
+                message="Market history is unavailable.",
+                status_code=503,
+            )
         retrieved_at = quote.retrieved_at
         as_of = date_as_utc(points[-1].date)
         history = MarketHistory(
