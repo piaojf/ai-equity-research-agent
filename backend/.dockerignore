@@ -1,7 +1,7 @@
-__pycache__/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-*.egg-info/
-.env
-tests/
+.venv
+__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+tests
+*.pyc

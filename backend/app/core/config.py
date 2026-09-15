@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     provider_retry_delay_seconds: float = Field(default=1.0, ge=0)
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:3000"
+    database_url: str = "postgresql+asyncpg://equity:equity@postgres:5432/equity"
+    redis_url: str = "redis://redis:6379/0"
+    qdrant_url: str = "http://qdrant:6333"
 
     model_config = SettingsConfigDict(
         env_file=".env",
