@@ -1,0 +1,96 @@
+from __future__ import annotations
+
+from typing import Protocol
+
+from pydantic import BaseModel, Field
+
+from app.providers.sec.base import FilingMetadata, SECProvider
+from app.rag.chunking import FilingChunk, chunk_filing
+from app.rag.embeddings import EmbeddingProvider
+from app.rag.vector_store import RetrievedChunk, VectorStore
+from app.schemas.citations import Citation
+
+
+class SECAskResult(BaseModel):
+    ticker: str = Field(min_length=1)
+    question: str = Field(min_length=1)
+    answer: str
+    citations: list[Citation] = Field(default_factory=list)
+    confidence: str = "low"
+    limitations: list[str] = Field(default_factory=list)
+
+
+class SECAskLLM(Protocol):
+    async def answer(
+        self, question: str, evidence: list[RetrievedChunk]
+    ) -> str: ...
+
+
+class SECAskService:
+    def __init__(
+        self,
+        provider: SECProvider | None,
+        embedder: EmbeddingProvider,
+        vector_store: VectorStore,
+        *,
+        answerer: SECAskLLM | None = None,
+    ) -> None:
+        self.provider = provider
+        self.embedder = embedder
+        self.vector_store = vector_store
+        self.answerer = answerer
+
+    async def ingest(self, filing: FilingMetadata, text: str) -> list[FilingChunk]:
+        chunks = chunk_filing(filing, text)
+        vectors = await self.embedder.embed([chunk.text for chunk in chunks])
+        await self.vector_store.upsert(chunks, vectors)
+        return chunks
+
+    async def ask(
+        self,
+        ticker: str,
+        question: str,
+        *,
+        filing_type: str | None = None,
+        limit: int = 5,
+    ) -> SECAskResult:
+        query_vector = (await self.embedder.embed([question]))[0]
+        evidence = await self.vector_store.search(
+            query_vector,
+            ticker=ticker,
+            filing_type=filing_type,
+            limit=limit,
+        )
+        if not evidence:
+            return SECAskResult(
+                ticker=ticker.strip().upper(),
+                question=question,
+                answer="Available filings do not provide sufficient evidence.",
+                confidence="low",
+                limitations=["No relevant SEC filing chunks were retrieved."],
+            )
+        answer = (
+            await self.answerer.answer(question, evidence)
+            if self.answerer is not None
+            else "Evidence retrieved; an answer model is not configured."
+        )
+        citations = [
+            Citation(
+                ticker=item.chunk.metadata.ticker,
+                filing_type=item.chunk.metadata.filing_type,
+                filing_date=item.chunk.metadata.filing_date,
+                accession_number=item.chunk.metadata.accession_number,
+                section=item.chunk.section,
+                chunk_id=item.chunk.chunk_id,
+                source_url=item.chunk.metadata.source_url,
+                excerpt=item.chunk.text,
+            )
+            for item in evidence
+        ]
+        return SECAskResult(
+            ticker=ticker.strip().upper(),
+            question=question,
+            answer=answer,
+            citations=citations,
+            confidence="high" if len(evidence) >= 2 else "medium",
+        )

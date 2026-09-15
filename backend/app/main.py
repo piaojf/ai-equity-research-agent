@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.routes_sec import router as sec_router
 from app.api.routes_stocks import router as stocks_router
 from app.core.config import get_settings
 from app.core.errors import (
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     )
     application.add_middleware(RequestIdMiddleware)
     application.include_router(stocks_router)
+    application.include_router(sec_router)
 
     @application.get(
         "/health",

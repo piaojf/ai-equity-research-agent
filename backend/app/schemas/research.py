@@ -1,8 +1,9 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
+from app.schemas.citations import Citation
 from app.schemas.financial import FinancialMetrics
 from app.schemas.market import StockOverview
 from app.schemas.scoring import ScoreBreakdown
@@ -42,22 +43,6 @@ class NewsAnalysis(BaseModel):
     articles: list[NewsItem] = Field(default_factory=list, max_length=50)
     summary: str = Field(default="", max_length=4_000)
     limitations: list[str] = Field(default_factory=list, max_length=50)
-
-
-class Citation(BaseModel):
-    """Filing identity for future SEC RAG evidence."""
-
-    model_config = ConfigDict(extra="forbid", strict=True)
-
-    ticker: str = Field(min_length=1, max_length=10)
-    filing_type: Literal["10-K", "10-Q"]
-    filing_date: date
-    accession_number: str = Field(min_length=1, max_length=64)
-    section: str = Field(min_length=1, max_length=200)
-    chunk_id: str = Field(min_length=1, max_length=200)
-    source_url: HttpUrl
-    excerpt: str = Field(min_length=1, max_length=10_000)
-    page_or_anchor: str | None = Field(default=None, max_length=200)
 
 
 class SecResearchResult(BaseModel):
