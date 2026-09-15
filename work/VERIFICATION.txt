@@ -1,0 +1,62 @@
+Phase 1 verification
+=====================
+
+Changed branch/field
+--------------------
+branch: deployment
+field: primary_target
+modified value: Linux VPS + Docker Compose + Nginx + HTTPS
+related field: phase1_docker_validation=deferred
+
+Artifacts
+---------
+MODIFIED_FILE: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\MODIFIED_FILE.txt
+DIFF_FILE: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\DIFF_FILE.patch
+VERIFICATION: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\VERIFICATION.txt
+ROLLBACK: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\ROLLBACK.sh
+
+BASELINE
+--------
+Command: ..\.venv\Scripts\python.exe -m pytest -q
+Working directory: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\backend
+Input: local test suite; no external API calls
+Literal result:
+ERROR tests/test_request_id.py - NameError: name 'pytest' is not defined
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+Exit status: 1
+
+MODIFIED
+--------
+Command: ..\.venv\Scripts\ruff.exe check app tests; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; ..\.venv\Scripts\mypy.exe app; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; ..\.venv\Scripts\python.exe -m pytest -q
+Working directory: C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\backend
+Input: local source and test files; no external API calls
+Literal result:
+All checks passed!
+Success: no issues found in 10 source files
+......                                                                   [100%]
+Exit status: 0
+
+ROLLBACK
+--------
+Command: & 'C:\Program Files\Git\bin\bash.exe' 'C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\ROLLBACK.sh' target.txt target.txt.bak
+Working directory: temporary rollback-test copy under work
+Input: MODIFIED_FILE copy with tampered=true appended; backup retained original copy
+Literal result:
+restored C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\rollback-test\target.txt from C:\Users\Administrator\Documents\Codex\2026-09-15\files-mentioned-by-the-user-ai\work\rollback-test\target.txt.bak
+{"restored":true}
+Target SHA256: C7C75226EB1B82F821A200E16DC551613C59B1CC5C9456AAC2564D281041C690
+Backup SHA256: C7C75226EB1B82F821A200E16DC551613C59B1CC5C9456AAC2564D281041C690
+Exit status: 0
+
+Runtime verification
+--------------------
+GET http://127.0.0.1:8000/health -> HTTP 200
+GET http://127.0.0.1:8000/docs -> HTTP 200
+GET http://127.0.0.1:8000/redoc -> HTTP 200
+Observed health response included request_id and data_mode=mock.
+Observed logs included request_id, method, path, status_code, latency_ms.
+Restored behavior/status: rollback copy matched its backup hash and the changed MODIFIED_FILE remained unchanged.
+
+Docker verification
+-------------------
+Not run by design: Phase 1 is native local development and Docker is deferred to Linux deployment.

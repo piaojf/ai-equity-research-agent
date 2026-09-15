@@ -1,0 +1,5 @@
+﻿# Transaction fixture
+changed_branch=deployment
+changed_field=primary_target
+value=Linux VPS + Docker Compose + Nginx + HTTPS
+phase1_docker_validation=deferred
