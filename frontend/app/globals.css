@@ -47,7 +47,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   z-index: 10;
 }
 .brand-mark { align-items: center; display: flex; gap: 12px; }
-.brand-symbol { align-items: center; background: linear-gradient(135deg, var(--signal), var(--cyan)); border-radius: 13px; color: var(--bg); display: grid; font-size: 18px; font-weight: 900; height: 40px; width: 40px; }
+.brand-symbol { align-items: center; background: linear-gradient(145deg, #d7ff86, #78ded0); border-radius: 14px; box-shadow: 0 8px 24px rgba(121, 226, 208, .16); display: grid; height: 40px; overflow: hidden; place-items: center; position: relative; width: 40px; }
+.logo-orbit { border: 2px solid #0a1a28; border-bottom-color: transparent; border-radius: 50%; height: 22px; position: absolute; transform: rotate(-35deg); width: 22px; }
+.logo-core { background: #0a1a28; border-radius: 50%; height: 6px; position: absolute; width: 6px; }
 .brand-name { font-size: 16px; font-weight: 800; letter-spacing: -.03em; }
 .brand-caption { color: var(--quiet); font-size: 10px; letter-spacing: .18em; margin-top: 4px; text-transform: uppercase; }
 .local-badge { align-self: flex-start; background: rgba(200, 243, 106, .09); border: 1px solid rgba(200, 243, 106, .25); border-radius: 999px; color: var(--signal); font-size: 10px; letter-spacing: .08em; margin-top: 28px; padding: 7px 10px; }
@@ -100,7 +102,8 @@ h3 { font-size: 15px; letter-spacing: -.02em; margin: 22px 0 8px; }
 .button.alt:hover, .button.secondary:hover { background: rgba(255,255,255,.08); box-shadow: none; }
 .button:disabled { cursor: wait; opacity: .55; transform: none; }
 .stack { display: grid; gap: 14px; }
-.search { display: flex; gap: 10px; max-width: 560px; margin-top: 30px; }
+.search { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) auto; max-width: 560px; margin-top: 30px; }
+.search .button { min-width: 112px; white-space: nowrap; }
 .search input, .input, textarea { background: rgba(5, 14, 26, .65); border: 1px solid var(--line-strong); border-radius: 11px; color: var(--text); outline: none; padding: 13px 15px; width: 100%; }
 .search input:focus, .input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(121,226,208,.1); }
 .search input::placeholder, textarea::placeholder { color: var(--quiet); }
@@ -150,5 +153,6 @@ textarea { line-height: 1.7; resize: vertical; }
 .empty-state { border: 1px dashed var(--line-strong); border-radius: 14px; color: var(--muted); padding: 18px; }
 .error-box { background: rgba(255,133,133,.08); border: 1px solid rgba(255,133,133,.2); border-radius: 14px; color: #ffc0c0; padding: 14px; }
 .footer-note { color: var(--quiet); font-size: 11px; line-height: 1.7; margin-top: 28px; }
-@media (max-width: 980px) { .app-frame { display: block; } .sidebar { min-height: auto; padding: 16px 18px; position: relative; } .side-note, .side-footer { display: none; } .side-nav { display: flex; margin-top: 16px; overflow-x: auto; } .side-link { white-space: nowrap; } .local-badge { margin-top: 16px; } .hero, .score-layout { grid-template-columns: 1fr; } }
-@media (max-width: 700px) { .shell, .page-shell { padding: 24px 18px 56px; } .topbar { margin-bottom: 36px; } .grid, .grid.four, .feature-grid { grid-template-columns: 1fr; } .hero-copy { padding: 8px 0 10px; } .search { flex-direction: column; } .search .button { width: 100%; } h1 { font-size: clamp(42px, 13vw, 64px); } .comparison-row { gap: 8px; grid-template-columns: 1.3fr 1fr 1fr; } }
+@media (max-width: 980px) { .app-frame { display: block; } .sidebar { align-items: center; display: grid; gap: 0 28px; grid-template-columns: auto 1fr; min-height: auto; padding: 14px 24px; position: relative; } .local-badge, .side-note, .side-footer { display: none; } .side-nav { display: flex; justify-content: flex-end; margin-top: 0; overflow-x: auto; } .side-link { padding: 9px 11px; white-space: nowrap; } .page-shell { padding-top: 26px; } .topbar { margin-bottom: 24px; } .hero-copy { padding: 12px 0 10px; } }
+@media (max-width: 760px) { .hero, .score-layout { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .sidebar { align-items: start; display: block; padding: 14px 18px 12px; } .side-nav { justify-content: flex-start; margin-top: 13px; } .shell, .page-shell { padding: 22px 18px 56px; } .topbar { margin-bottom: 28px; } .grid, .grid.four, .feature-grid { grid-template-columns: 1fr; } .hero-copy { padding: 6px 0 8px; } .search { grid-template-columns: 1fr; } .search .button { width: 100%; } h1 { font-size: clamp(42px, 13vw, 64px); } .comparison-row { gap: 8px; grid-template-columns: 1.3fr 1fr 1fr; } }

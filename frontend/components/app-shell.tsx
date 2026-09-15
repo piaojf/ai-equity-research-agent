@@ -15,7 +15,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
   return <div className="app-frame">
     <aside className="sidebar">
       <Link href="/" className="brand-mark">
-        <span className="brand-symbol">S</span>
+        <span className="brand-symbol" aria-hidden="true"><span className="logo-orbit" /><span className="logo-core" /></span>
         <span><span className="brand-name">SignalRoom</span><span className="brand-caption">AI 股票研究工作台</span></span>
       </Link>
       <span className="local-badge">本机演示环境 · v0.1</span>
