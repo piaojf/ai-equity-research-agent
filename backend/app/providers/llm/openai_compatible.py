@@ -13,8 +13,8 @@ class OpenAICompatibleProvider:
         self,
         api_key: SecretStr | str,
         *,
-        model: str = "gpt-4o-mini",
-        base_url: str = "https://api.openai.com/v1",
+        model: str = "deepseek-flash",
+        base_url: str = "https://api.deepseek.com",
         timeout_seconds: float = 30.0,
         client: httpx.AsyncClient | None = None,
     ) -> None:
@@ -33,20 +33,19 @@ class OpenAICompatibleProvider:
         user_prompt: str,
         schema: type[BaseModel],
     ) -> BaseModel:
+        schema_json = json.dumps(schema.model_json_schema(), ensure_ascii=False)
+        deepseek_system_prompt = (
+            f"{system_prompt}\nReturn only valid JSON. "
+            "The JSON must follow this schema:\n"
+            f"{schema_json}"
+        )
         payload = {
             "model": self.model,
             "messages": [
-                {"role": "system", "content": system_prompt},
+                {"role": "system", "content": deepseek_system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": schema.__name__,
-                    "strict": True,
-                    "schema": schema.model_json_schema(),
-                },
-            },
+            "response_format": {"type": "json_object"},
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",

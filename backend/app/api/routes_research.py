@@ -25,6 +25,18 @@ def get_research_graph() -> ResearchGraph:
     settings = get_settings()
     interpreter: ReportInterpreter = MockReportInterpreter()
     if (
+        settings.deepseek_api_key is not None
+        and settings.deepseek_api_key.get_secret_value().strip()
+    ):
+        interpreter = LLMReportInterpreter(
+            OpenAICompatibleProvider(
+                settings.deepseek_api_key,
+                model=settings.deepseek_model,
+                base_url=settings.deepseek_base_url,
+                timeout_seconds=settings.provider_timeout_seconds * 3,
+            )
+        )
+    elif (
         settings.openai_api_key is not None
         and settings.openai_api_key.get_secret_value().strip()
     ):

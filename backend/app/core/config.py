@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     market_provider: Literal["yahoo", "alpha_vantage"] = "yahoo"
     alpha_vantage_api_key: SecretStr | None = None
     sec_user_agent: SecretStr | None = None
+    deepseek_api_key: SecretStr | None = None
+    deepseek_model: str = "deepseek-flash"
+    deepseek_base_url: str = "https://api.deepseek.com"
     openai_api_key: SecretStr | None = None
     openai_model: str = "gpt-4o-mini"
     openai_base_url: str = "https://api.openai.com/v1"

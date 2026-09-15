@@ -112,6 +112,23 @@ Useful URLs:
 - <http://127.0.0.1:8000/redoc>
 - <http://127.0.0.1:3000> when the frontend is run separately
 
+### DeepSeek V4.1 Flash
+
+The narrative research layer is configured for DeepSeek's OpenAI-compatible API.
+The API model identifier is `deepseek-flash`, which maps to DeepSeek-V4.1-Flash;
+the base URL is `https://api.deepseek.com`. Copy `.env.example` to `.env` and
+fill in only `DEEPSEEK_API_KEY`:
+
+```dotenv
+DEEPSEEK_API_KEY=replace-with-your-key
+DEEPSEEK_MODEL=deepseek-flash
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+```
+
+The adapter uses JSON mode and validates the result against the existing
+Pydantic `ReportInterpretation` schema. Deterministic numeric scores remain
+outside the LLM boundary.
+
 Example API calls:
 
 ```powershell

@@ -58,7 +58,7 @@ FCF growth.
 
 LangGraph executed through the research nodes and Pydantic structured output
 validated successfully. The local result used `MockReportInterpreter` because
-no `OPENAI_API_KEY` or local LLM service was configured. Therefore the
+no `DEEPSEEK_API_KEY` or local LLM service was configured. Therefore the
 real-LLM acceptance item is `SKIPPED: credential/service not configured`; the
 existing `LLMReportInterpreter` interface remains the integration boundary.
 

@@ -1,3 +1,5 @@
+import json
+
 import httpx
 import pytest
 from pydantic import BaseModel, SecretStr
@@ -11,7 +13,10 @@ class ExampleOutput(BaseModel):
 
 @pytest.mark.asyncio
 async def test_openai_compatible_provider_validates_structured_output() -> None:
+    captured: dict[str, object] = {}
+
     def response(_: httpx.Request) -> httpx.Response:
+        captured.update(_json=_.content.decode())
         return httpx.Response(
             200,
             json={
@@ -31,3 +36,7 @@ async def test_openai_compatible_provider_validates_structured_output() -> None:
 
     assert isinstance(result, ExampleOutput)
     assert result.answer == "grounded"
+    request_payload = json.loads(str(captured["_json"]))
+    assert request_payload["model"] == "deepseek-flash"
+    assert request_payload["response_format"] == {"type": "json_object"}
+    assert "Return only valid JSON" in request_payload["messages"][0]["content"]
