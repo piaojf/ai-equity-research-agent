@@ -9,3 +9,5 @@ __pycache__/
 work/*.log
 work/*.pid
 outputs/*
+frontend/node_modules/
+frontend/.next/

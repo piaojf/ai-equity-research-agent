@@ -1,0 +1,7 @@
+import Link from "next/link";
+
+const stages = ["Understand question", "Detect significant moves", "Search news + announcements", "Cross-check evidence", "Generate report"];
+
+export default function DeepResearchPage() {
+  return <main className="shell"><header className="topbar"><Link className="brand" href="/">SignalRoom</Link><span className="pill">task queued</span></header><span className="eyebrow">Deep Research / background workflow</span><h1>Why did NVDA fall recently?</h1><section className="grid"><article className="card"><span className="eyebrow">Current stage</span><h2>Waiting for worker</h2><p className="muted">HTTP 202 returned a task ID. Redis + ARQ worker executes the LangGraph workflow in production.</p></article><article className="card"><span className="eyebrow">Evidence</span><h2>0 sources</h2><p className="muted">Events remain empty until market, news and filing sources are cross-checked.</p></article><article className="card"><span className="eyebrow">Confidence</span><h2>Low</h2><p className="muted">The UI intentionally distinguishes queued, running, completed and failed states.</p></article></section><section className="card" style={{ marginTop: 16 }}><div className="stack">{stages.map((stage, index) => <div key={stage} style={{ display: "flex", gap: 14, alignItems: "center" }}><span className="pill">0{index + 1}</span><span>{stage}</span></div>)}</div></section></main>;
+}
