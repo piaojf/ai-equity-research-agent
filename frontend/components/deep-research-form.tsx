@@ -7,6 +7,7 @@ import type { DeepResearchStage, DeepResearchTask } from "../lib/types";
 
 const DEFAULT_TICKER = "NVDA";
 const TICKER_PATTERN = /^[A-Z][A-Z0-9.-]{0,9}$/;
+const TICKER_IN_QUESTION = /(?:^|[^A-Z0-9.-])([A-Z](?:[A-Z0-9]|[.-](?=[A-Z0-9])){0,9})(?=$|[^A-Z0-9.-])/;
 const workflowStages: ReadonlyArray<{ key: DeepResearchStage; label: string }> = [
   { key: "understand_question", label: "理解问题" },
   { key: "detect_significant_price_moves", label: "识别重要波动" },
@@ -51,9 +52,16 @@ function normalizeTicker(value: string): string {
   return value.trim().toUpperCase();
 }
 
+function extractTicker(value: string): string | null {
+  const match = value.match(TICKER_IN_QUESTION);
+  return match ? normalizeTicker(match[1]) : null;
+}
+
 export function DeepResearchForm({ initialTicker = DEFAULT_TICKER }: { initialTicker?: string }) {
   const [ticker, setTicker] = useState(normalizeTicker(initialTicker) || DEFAULT_TICKER);
-  const [question, setQuestion] = useState("最近有哪些重大事项？");
+  const [question, setQuestion] = useState(
+    `研究 ${normalizeTicker(initialTicker) || DEFAULT_TICKER} 最近有哪些重大事项？`,
+  );
   const [task, setTask] = useState<DeepResearchTask | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -71,9 +79,10 @@ export function DeepResearchForm({ initialTicker = DEFAULT_TICKER }: { initialTi
   }, [task]);
 
   async function submit() {
-    const normalizedTicker = normalizeTicker(ticker);
-    if (!normalizedTicker) {
-      setError("请输入股票代码，例如 NVDA 或 INTC。");
+    const extractedTicker = extractTicker(question);
+    const normalizedTicker = normalizeTicker(extractedTicker || ticker);
+    if (!extractedTicker || !normalizedTicker) {
+      setError("请在研究问题中写入美股代码，例如：研究 NVDA 最近有哪些重大事项？");
       return;
     }
     if (!TICKER_PATTERN.test(normalizedTicker)) {
@@ -113,29 +122,21 @@ export function DeepResearchForm({ initialTicker = DEFAULT_TICKER }: { initialTi
           <span className="tag amber">异步执行</span>
         </div>
       </div>
-        <div className="dialog-context">
-          <span className="context-label">研究标的</span>
-          <input
-            id="deep-ticker"
-            aria-label="研究标的"
-            placeholder="输入股票代码，例如 NVDA、QCOM"
-            value={ticker}
-            onChange={(event) => setTicker(event.target.value.toUpperCase())}
-            maxLength={10}
-            autoCapitalize="characters"
-            spellCheck={false}
-          />
-        </div>
         <textarea
           id="deep-question"
           aria-label="研究问题"
-          placeholder="例如：最近有哪些重大事项？公司的主要业务风险是什么？"
+          placeholder="例如：研究 NVDA 最近有哪些重大事项？公司的主要业务风险是什么？"
           value={question}
-          onChange={(event) => setQuestion(event.target.value)}
+          onChange={(event) => {
+            const nextQuestion = event.target.value;
+            setQuestion(nextQuestion);
+            const nextTicker = extractTicker(nextQuestion);
+            if (nextTicker) setTicker(nextTicker);
+          }}
           style={{ minHeight: 112 }}
         />
         <div className="dialog-footer">
-          <span className="dialog-hint">一个问题，一次完整研究。</span>
+          <span className="dialog-hint">在同一个问题框中写入标的和问题。</span>
           <div className="form-actions">
             <button className="button" type="button" onClick={submit} disabled={loading}>
               {loading ? "创建任务中…" : "开始深度研究"}

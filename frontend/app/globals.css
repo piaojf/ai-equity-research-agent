@@ -177,11 +177,6 @@ textarea { line-height: 1.7; resize: vertical; }
 .dialog-label { color: var(--text); font-size: 16px; font-weight: 800; }
 .dialog-header p { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 6px 0 0; }
 .dialog-badges { align-items: end; display: flex; flex-direction: column; gap: 8px; }
-.dialog-context { align-items: center; background: rgba(255,255,255,.035); border: 1px solid var(--line); border-radius: 11px; display: flex; gap: 12px; padding: 4px 13px; }
-.context-label { color: var(--quiet); font-size: 12px; white-space: nowrap; }
-.dialog-context input { background: transparent; border: 0; color: var(--text); min-width: 0; outline: none; padding: 10px 0; width: 100%; }
-.dialog-context input::placeholder { color: var(--quiet); }
-.dialog-context:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(121,226,208,.1); }
 .research-dialog textarea { background: rgba(5, 14, 26, .56); min-height: 112px; }
 .dialog-footer { align-items: center; display: flex; gap: 14px; justify-content: space-between; }
 .dialog-hint { color: var(--quiet); font-size: 11px; }
