@@ -19,6 +19,24 @@ def _annual(value: float, year: int, *, filed: str | None = None) -> dict[str, o
     }
 
 
+def _interim(
+    value: float,
+    year: int,
+    *,
+    end: str = "06-30",
+    filed: str | None = None,
+) -> dict[str, object]:
+    return {
+        "fy": year,
+        "fp": "Q2",
+        "form": "10-Q",
+        "filed": filed or f"{year}-08-01",
+        "start": f"{year}-01-01",
+        "end": f"{year}-{end}",
+        "val": value,
+    }
+
+
 def _facts_payload() -> dict[str, object]:
     def usd(tag: str, values: list[dict[str, object]]) -> tuple[str, dict[str, object]]:
         return tag, {"units": {"USD": values}}
@@ -48,6 +66,27 @@ def _facts_payload() -> dict[str, object]:
         "units": {"USD/shares": [_annual(2, 2023), _annual(2.5, 2024)]}
     }
     return {"entityName": "Example Corp", "facts": {"us-gaap": facts}}
+
+
+def _interim_facts_payload() -> dict[str, object]:
+    def usd(tag: str, values: list[dict[str, object]]) -> tuple[str, dict[str, object]]:
+        return tag, {"units": {"USD": values}}
+
+    facts: dict[str, dict[str, object]] = dict(
+        [
+            usd(
+                "RevenueFromContractWithCustomerExcludingAssessedTax",
+                [_interim(100, 2024), _interim(120, 2025)],
+            ),
+            usd("EarningsPerShareDiluted", [_interim(2, 2024), _interim(2.5, 2025)]),
+        ]
+    )
+    facts["EarningsPerShareDiluted"] = {
+        "units": {
+            "USD/shares": [_interim(2, 2024), _interim(2.5, 2025)]
+        }
+    }
+    return {"entityName": "Interim Corp", "facts": {"us-gaap": facts}}
 
 
 @pytest.mark.asyncio
@@ -134,3 +173,29 @@ async def test_sec_company_facts_maps_timeout_to_provider_error() -> None:
     await client.aclose()
 
     assert "transport timeout" not in str(error.value)
+
+
+@pytest.mark.asyncio
+async def test_sec_company_facts_uses_interim_facts_without_annual_filings() -> None:
+    def response(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=_interim_facts_payload())
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(response))
+    provider = SECCompanyFactsProvider(
+        "research@example.test",
+        cik=1181412,
+        client=client,
+    )
+
+    metrics = await provider.get_financials("SPCX")
+    await client.aclose()
+
+    assert metrics.revenue is not None
+    assert metrics.revenue.value == 120.0
+    assert metrics.revenue_growth is not None
+    assert metrics.revenue_growth.value == pytest.approx(0.2)
+    assert metrics.eps is not None
+    assert metrics.eps.value == 2.5
+    assert metrics.eps_growth is not None
+    assert metrics.eps_growth.value == pytest.approx(0.25)
+    assert metrics.revenue.as_of == datetime(2025, 6, 30, tzinfo=UTC)

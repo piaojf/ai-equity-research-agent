@@ -60,6 +60,8 @@ class SECCompanyFactsProvider(FinancialDataProvider):
         "PaymentsToAcquirePropertyPlantAndEquipment",
         "PaymentsToAcquireProductiveAssets",
     )
+    _ANNUAL_FORMS = {"10-K", "10-K/A", "20-F", "20-F/A", "40-F", "40-F/A"}
+    _INTERIM_FORMS = {"10-Q", "10-Q/A", "6-K", "6-K/A"}
 
     def __init__(
         self,
@@ -215,11 +217,12 @@ class SECCompanyFactsProvider(FinancialDataProvider):
             units = candidate["units"]
             valid_units = [unit for unit in units if isinstance(unit, str)]
             valid_units.sort(key=lambda unit: cls._unit_rank(unit, eps=eps))
+            annual_records: list[_AnnualFact] = []
+            interim_records: list[_AnnualFact] = []
             for unit in valid_units:
                 raw_records = units.get(unit)
                 if not isinstance(raw_records, list):
                     continue
-                records: list[_AnnualFact] = []
                 for raw in raw_records:
                     if not isinstance(raw, dict):
                         continue
@@ -233,12 +236,19 @@ class SECCompanyFactsProvider(FinancialDataProvider):
                     start = cls._parse_date(raw.get("start"))
                     duration = (end - start).days if start is not None else None
                     form = str(raw.get("form", "")).upper()
-                    if form in {"10-K", "10-K/A"} and (
+                    record = _AnnualFact(value, end, filed, unit)
+                    if form in cls._ANNUAL_FORMS and (
                         duration is None or duration >= 270
                     ):
-                        records.append(_AnnualFact(value, end, filed, unit))
-                if records:
-                    return cls._deduplicate(records)
+                        annual_records.append(record)
+                    elif form in cls._INTERIM_FORMS and (
+                        duration is None or duration > 0
+                    ):
+                        interim_records.append(record)
+            if annual_records:
+                return cls._deduplicate(annual_records)
+            if interim_records:
+                return cls._deduplicate(interim_records)
         return []
 
     @staticmethod
