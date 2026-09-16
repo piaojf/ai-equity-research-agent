@@ -67,22 +67,18 @@ export function DeepResearchForm({ initialTicker = DEFAULT_TICKER }: { initialTi
   }
 
   return (
-    <section className="card stack">
+    <section className="research-dialog stack" role="group" aria-label="深度研究对话框">
       <div className="section-heading">
         <div>
-          <span className="eyebrow">研究任务</span>
+          <span className="eyebrow">研究对话</span>
           <h2>研究 {ticker || "美股"} 的近期情况</h2>
+          <p>告诉我你想研究哪家公司，以及最想了解的问题。</p>
         </div>
-        <span className="tag amber">异步执行</span>
-      </div>
-      <div className="research-dialog" role="group" aria-label="深度研究对话框">
-        <div className="dialog-header">
-          <div>
-            <span className="dialog-label">研究对话</span>
-            <p>告诉我你想研究哪家公司，以及最想了解的问题。</p>
-          </div>
+        <div className="dialog-badges">
           <span className="tag cyan">支持所有美股代码</span>
+          <span className="tag amber">异步执行</span>
         </div>
+      </div>
         <div className="dialog-context">
           <span className="context-label">研究标的</span>
           <input
@@ -113,7 +109,6 @@ export function DeepResearchForm({ initialTicker = DEFAULT_TICKER }: { initialTi
             {task && <span className="tag cyan">任务：{statusText[task.status]}</span>}
           </div>
         </div>
-      </div>
       {error && <div className="error-box"><strong>任务出现问题</strong><p>{error}</p></div>}
       {task && (
         <div className="signal">
