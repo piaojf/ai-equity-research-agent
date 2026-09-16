@@ -21,6 +21,7 @@ class SECEDGARProvider(SECProvider):
 
     name = "sec_edgar"
     submissions_url = "https://data.sec.gov/submissions/CIK{cik}.json"
+    ticker_url = "https://www.sec.gov/files/company_tickers.json"
 
     def __init__(
         self,
@@ -73,9 +74,26 @@ class SECEDGARProvider(SECProvider):
         normalized = ticker.strip().upper()
         if normalized.isdigit():
             return normalized.zfill(10)
-        if normalized not in self._ticker_ciks:
-            raise InvalidTickerError(normalized)
-        return self._ticker_ciks[normalized]
+        if normalized in self._ticker_ciks:
+            return self._ticker_ciks[normalized]
+
+        payload = await self._get_json(self.ticker_url)
+        for entry in payload.values():
+            if not isinstance(entry, dict):
+                continue
+            entry_ticker = entry.get("ticker")
+            raw_cik = entry.get("cik_str", entry.get("cik"))
+            if (
+                isinstance(entry_ticker, str)
+                and entry_ticker.strip().upper() == normalized
+                and isinstance(raw_cik, (str, int))
+            ):
+                cik = str(raw_cik).strip()
+                if cik.isdigit() and len(cik) <= 10:
+                    normalized_cik = cik.zfill(10)
+                    self._ticker_ciks[normalized] = normalized_cik
+                    return normalized_cik
+        raise InvalidTickerError(normalized)
 
     async def list_filings(
         self, ticker: str, forms: list[str]

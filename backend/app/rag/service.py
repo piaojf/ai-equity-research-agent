@@ -110,7 +110,10 @@ class SECAskService:
         filings = await self.provider.list_filings(normalized, ["10-K", "10-Q"])
         if not filings:
             return
-        filing = filings[0]
+        filing = next(
+            (candidate for candidate in filings if candidate.filing_type == "10-K"),
+            filings[0],
+        )
         text = await self.provider.fetch_filing(filing)
         await self.ingest(filing, text)
         self._ingested_tickers.add(normalized)

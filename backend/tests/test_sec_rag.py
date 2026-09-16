@@ -64,6 +64,42 @@ async def test_edgar_adapter_maps_submission_metadata_without_network() -> None:
 
 
 @pytest.mark.asyncio
+async def test_edgar_adapter_resolves_unmapped_ticker_without_network() -> None:
+    requested: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested.append(str(request.url))
+        if request.url == httpx.URL("https://www.sec.gov/files/company_tickers.json"):
+            return httpx.Response(
+                200,
+                json={"0": {"cik_str": 2488, "ticker": "AMD", "title": "AMD"}},
+            )
+        return httpx.Response(
+            200,
+            json={
+                "filings": {
+                    "recent": {
+                        "form": ["10-K"],
+                        "filingDate": ["2025-02-26"],
+                        "accessionNumber": ["0000000000-25-000001"],
+                        "primaryDocument": ["annual.htm"],
+                    }
+                }
+            },
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        provider = SECEDGARProvider("research@example.test", client=client)
+        filings = await provider.list_filings("AMD", ["10-K"])
+
+    assert filings[0].accession_number == "0000000000-25-000001"
+    assert requested == [
+        "https://www.sec.gov/files/company_tickers.json",
+        "https://data.sec.gov/submissions/CIK0000002488.json",
+    ]
+
+
+@pytest.mark.asyncio
 async def test_sec_ask_preserves_filing_identity_and_citation() -> None:
     class Answerer:
         async def answer(self, question, evidence):  # noqa: ANN001
@@ -104,6 +140,35 @@ async def test_sec_ask_returns_low_confidence_without_evidence() -> None:
     assert result.confidence == "low"
     assert result.citations == []
     assert "sufficient evidence" in result.answer
+
+
+@pytest.mark.asyncio
+async def test_latest_filing_ingestion_prefers_annual_filing() -> None:
+    fetched: list[str] = []
+
+    class Provider:
+        async def list_filings(
+            self, ticker: str, forms: list[str]
+        ) -> list[FilingMetadata]:
+            del ticker, forms
+            return [
+                _filing().model_copy(update={"filing_type": "10-Q"}),
+                _filing().model_copy(update={"filing_type": "10-K"}),
+            ]
+
+        async def fetch_filing(self, filing: FilingMetadata) -> str:
+            fetched.append(filing.filing_type)
+            return "Item 1A Risk Factors: annual filing evidence."
+
+    service = SECAskService(
+        provider=Provider(),  # type: ignore[arg-type]
+        embedder=DeterministicEmbeddingProvider(),
+        vector_store=InMemoryVectorStore(),
+    )
+
+    await service.ensure_latest_filing_ingested("AMD")
+
+    assert fetched == ["10-K"]
 
 
 def test_chunking_strips_html_and_rejects_invalid_overlap() -> None:
