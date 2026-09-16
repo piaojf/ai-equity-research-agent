@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from math import isfinite
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 from app.schemas.financial import FinancialMetrics, MetricValue
 from app.schemas.scoring import ScoreBreakdown, ScoreComponent
@@ -95,7 +95,7 @@ def _metric_value(metrics: FinancialMetrics, name: str) -> MetricValue | None:
     value = getattr(metrics, name)
     if value is None or value.value is None:
         return None
-    return value
+    return cast(MetricValue, value)
 
 
 def _component_for(

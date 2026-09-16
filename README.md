@@ -193,18 +193,14 @@ nginx/             reverse-proxy configuration
 
 - Local mock mode is the deterministic demo path; real provider credentials are
   not committed.
-- The local task queue is in-memory. The ARQ worker entry point and Compose
-  wiring are ready for Linux deployment, while durable task/report integration
-  remains an operations follow-up.
-- The SEC vector store has an in-memory implementation for tests and a Qdrant
-  boundary for deployment; embedding quality and filing ingestion are future
-  production tuning work.
+- Mock mode uses in-memory task/vector stores for deterministic tests. Real mode
+  uses Redis/ARQ for task delivery, PostgreSQL for task/report state, and Qdrant
+  for SEC filing retrieval.
 - Frontend package validation requires Node.js/npm; the backend is independently
   testable without them.
 
-Next recommended increment: connect a real market provider behind the existing
-interface, then add authenticated SEC filing ingestion and durable worker
-status updates without changing the public contracts.
+The remaining operational setup is to provision local Qdrant and PostgreSQL
+credentials before running the full real-mode browser demo.
 
 ## Portfolio material
 

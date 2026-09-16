@@ -4,12 +4,13 @@ import pytest
 from pydantic import TypeAdapter
 
 from app.core.config import Settings
+from app.db.session import Database
 from app.deep_research.graph import DeepResearchGraph
 from app.providers.market_price.registry import MarketProviderRegistry
 from app.schemas.deep_research import Evidence
 from app.services.market import MarketService
 from app.workers.queue import InMemoryTaskQueue
-from app.workers.service import DeepResearchService
+from app.workers.service import DeepResearchService, DurableDeepResearchService
 
 
 class EvidenceTool:
@@ -76,3 +77,29 @@ def test_deep_research_endpoint_returns_202_and_task_id(client) -> None:  # noqa
     assert payload["request_id"]
     assert payload["data"]["task_id"]
     assert payload["data"]["status"] == "queued"
+
+
+@pytest.mark.asyncio
+async def test_durable_service_persists_task_and_enqueues_request_id() -> None:
+    class Queue:
+        def __init__(self) -> None:
+            self.jobs = []
+
+        async def enqueue(self, job) -> None:  # noqa: ANN001
+            self.jobs.append(job)
+
+    database = Database("sqlite+aiosqlite:///:memory:")
+    await database.create_schema()
+    queue = Queue()
+    service = DurableDeepResearchService(database, queue)
+
+    accepted = await service.submit(
+        "nvda", "Why did NVDA move?", request_id="req-durable"
+    )
+    status = await service.status(accepted.task_id)
+
+    assert status is not None
+    assert status.status == "queued"
+    assert queue.jobs[0].task_id == accepted.task_id
+    assert queue.jobs[0].request_id == "req-durable"
+    await database.dispose()

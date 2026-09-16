@@ -6,6 +6,7 @@ from typing import Literal, Protocol, TypedDict, cast
 from langgraph.graph import END, START, StateGraph
 
 from app.core.errors import AppError, ErrorCode
+from app.deep_research.llm import DeepResearchAnswerer
 from app.schemas.deep_research import (
     DeepResearchReport,
     Evidence,
@@ -20,6 +21,10 @@ class DeepResearchMarketService(Protocol):
 
 class EvidenceSearchTool(Protocol):
     async def search(self, ticker: str, around: list[date]) -> list[Evidence]: ...
+
+
+class CompiledDeepResearchGraph(Protocol):
+    async def ainvoke(self, input: DeepResearchState) -> object: ...
 
 
 class DeepResearchState(TypedDict, total=False):
@@ -52,6 +57,7 @@ class DeepResearchGraph:
         news_tool: EvidenceSearchTool | None = None,
         announcement_tool: EvidenceSearchTool | None = None,
         sec_tool: EvidenceSearchTool | None = None,
+        answerer: DeepResearchAnswerer | None = None,
     ) -> None:
         self.market_service = market_service
         self.news_tool = news_tool or EmptyEvidenceSearchTool("news")
@@ -59,9 +65,10 @@ class DeepResearchGraph:
             "announcement"
         )
         self.sec_tool = sec_tool or EmptyEvidenceSearchTool("sec")
+        self.answerer = answerer
         self.graph = self._build()
 
-    def _build(self):  # noqa: ANN202
+    def _build(self) -> CompiledDeepResearchGraph:
         builder = StateGraph(DeepResearchState)
         builder.add_node("understand_question", self.understand_question)
         builder.add_node("fetch_historical_price", self.fetch_historical_price)
@@ -86,7 +93,7 @@ class DeepResearchGraph:
         builder.add_edge("analyze_possible_causes", "cross_check_evidence")
         builder.add_edge("cross_check_evidence", "generate_research_report")
         builder.add_edge("generate_research_report", END)
-        return builder.compile()
+        return cast(CompiledDeepResearchGraph, builder.compile())
 
     async def understand_question(self, state: DeepResearchState) -> dict[str, object]:
         ticker = state.get("ticker", "").strip().upper()
@@ -183,6 +190,10 @@ class DeepResearchGraph:
             if not evidence
             else "Possible causes are listed only when linked to retrieved evidence."
         )
+        if self.answerer is not None and evidence:
+            conclusion = await self.answerer.answer(
+                state["question"], evidence, state.get("major_events", [])
+            )
         confidence: Literal["low", "medium"] = (
             "low" if len(evidence) < 2 else "medium"
         )

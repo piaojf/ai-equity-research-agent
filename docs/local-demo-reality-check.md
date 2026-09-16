@@ -81,6 +81,10 @@ ingests the latest filing before retrieval. Qdrant was not listening on
 `127.0.0.1:6333`, so real Qdrant ingestion/retrieval is recorded as
 `SKIPPED: Qdrant service not configured`, not as a passed production check.
 
+The runtime path is now wired to `QdrantVectorStore` in `DATA_MODE=real`, while
+mock mode retains `InMemoryVectorStore`. A local embedded Qdrant verification
+also confirmed deterministic upsert and metadata rehydration.
+
 ## F. Deep Research and persistence
 
 `POST /api/deep-research` returned HTTP 202 with `task_id` and `request_id`.
@@ -88,9 +92,10 @@ The local in-memory queue scheduled a worker task and the task reached
 `completed` with an evidence-aware low-confidence report. Live market data was
 used by the workflow.
 
-Redis was installed locally and `redis-cli ping` returned `PONG`. The API's
-local route still uses `InMemoryTaskQueue`; Redis/ARQ execution and durable
-task status are not marked passed.
+Redis was installed locally and `redis-cli ping` returned `PONG`. Real mode now
+uses `RedisTaskQueue` and the ARQ worker entry point; PostgreSQL remains the
+source of truth for durable task and report status. The real API path remains
+pending until the local PostgreSQL role and Qdrant service are configured.
 
 A temporary native PostgreSQL 17 cluster was used to verify repository
 behavior: a completed `ResearchTask` and `ResearchReport` were written,
@@ -105,11 +110,12 @@ LOCAL DEMO READY: PARTIAL
 
 Passed: frontend runtime/build, real market data, real financial data,
 deterministic scoring, LangGraph execution, SEC EDGAR/chunking/in-memory RAG,
-HTTP 202 lifecycle, native PostgreSQL repository persistence, pytest, Ruff, and
-mypy.
+HTTP 202 lifecycle, native PostgreSQL repository persistence, DeepSeek API key
+and model availability check, pytest, Ruff, and mypy.
 
-Not passed or skipped: real LLM, Qdrant-backed RAG, Redis/ARQ-backed API worker,
-and browser click-level automation beyond the rendered runtime pages.
+Not passed or skipped: full real-mode DeepSeek pipeline, Qdrant HTTP service,
+Redis/ARQ-backed API worker with PostgreSQL credentials, and browser click-level
+automation beyond the rendered runtime pages.
 
 No Phase 11 was created. The remaining items are external runtime
 configuration, not additional product scope.

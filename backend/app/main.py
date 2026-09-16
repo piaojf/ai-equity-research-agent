@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.routes_deep_research import close_durable_service
 from app.api.routes_deep_research import router as deep_research_router
 from app.api.routes_research import router as research_router
 from app.api.routes_sec import router as sec_router
@@ -31,8 +32,11 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     logger.info("service_starting", extra={"service": settings.app_name})
-    yield
-    logger.info("service_stopping", extra={"service": settings.app_name})
+    try:
+        yield
+    finally:
+        await close_durable_service()
+        logger.info("service_stopping", extra={"service": settings.app_name})
 
 
 def create_app() -> FastAPI:

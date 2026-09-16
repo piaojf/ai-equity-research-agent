@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 from typing import Protocol
 
 from pydantic import BaseModel, Field
 
+from app.core.errors import AppError, ErrorCode
 from app.providers.sec.base import FilingMetadata, SECProvider
 from app.rag.chunking import FilingChunk, chunk_filing
 from app.rag.embeddings import EmbeddingProvider
@@ -24,6 +26,62 @@ class SECAskLLM(Protocol):
     async def answer(
         self, question: str, evidence: list[RetrievedChunk]
     ) -> str: ...
+
+
+class SECAskAnswer(BaseModel):
+    answer: str = Field(min_length=1, max_length=8_000)
+
+
+class StructuredProvider(Protocol):
+    async def generate_structured(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        schema: type[BaseModel],
+    ) -> BaseModel: ...
+
+
+class StructuredSECAskLLM:
+    """Evidence-only SEC answerer backed by the shared structured LLM port."""
+
+    def __init__(self, provider: StructuredProvider) -> None:
+        self.provider = provider
+
+    async def answer(self, question: str, evidence: list[RetrievedChunk]) -> str:
+        evidence_payload = [
+            {
+                "ticker": item.chunk.metadata.ticker,
+                "filing_type": item.chunk.metadata.filing_type,
+                "filing_date": item.chunk.metadata.filing_date.isoformat(),
+                "accession_number": item.chunk.metadata.accession_number,
+                "section": item.chunk.section,
+                "chunk_id": item.chunk.chunk_id,
+                "source_url": str(item.chunk.metadata.source_url),
+                "excerpt": item.chunk.text,
+            }
+            for item in evidence
+        ]
+        try:
+            result = await self.provider.generate_structured(
+                system_prompt=(
+                    "Answer only from the supplied SEC filing evidence. "
+                    "Do not infer facts that are not present. Return JSON."
+                ),
+                user_prompt=(
+                    f"Question: {question}\nEvidence:\n"
+                    f"{json.dumps(evidence_payload, ensure_ascii=False)}"
+                ),
+                schema=SECAskAnswer,
+            )
+            return SECAskAnswer.model_validate(result).answer
+        except Exception as exc:
+            raise AppError(
+                ErrorCode.LLM_ERROR,
+                "SEC answer synthesis failed.",
+                status_code=502,
+                retryable=True,
+            ) from exc
 
 
 class SECAskService:

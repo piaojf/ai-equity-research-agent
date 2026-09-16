@@ -35,9 +35,9 @@ FastAPI -> ResearchTask(queued) -> Redis Queue -> Worker
 ```
 
 ARQ is the selected low-complexity queue option for the Linux deployment entry
-point. Dramatiq and Celery remain alternatives if operations require them. The
-local API currently uses an in-memory queue for deterministic development;
-durable production task/report updates are an explicit follow-up.
+point. Dramatiq and Celery remain alternatives if operations require them. Mock
+mode keeps an in-memory queue for deterministic tests; real mode uses Redis/ARQ,
+with PostgreSQL as the source of truth for task and report state.
 
 ## Data-source boundaries
 

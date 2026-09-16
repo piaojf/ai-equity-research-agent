@@ -4,6 +4,7 @@ import math
 from dataclasses import dataclass
 from datetime import date
 from typing import Any, Protocol
+from uuid import NAMESPACE_URL, uuid5
 
 from pydantic import HttpUrl, TypeAdapter
 from qdrant_client import AsyncQdrantClient
@@ -97,7 +98,7 @@ class QdrantVectorStore:
         self.dimension = dimension
 
     async def ensure_collection(self) -> None:
-        if not await self.client.collection_exists(self.collection):
+        if not await self.client.collection_exists(collection_name=self.collection):
             await self.client.create_collection(
                 collection_name=self.collection,
                 vectors_config=qmodels.VectorParams(
@@ -105,6 +106,18 @@ class QdrantVectorStore:
                     distance=qmodels.Distance.COSINE,
                 ),
             )
+            return
+        info = await self.client.get_collection(self.collection)
+        vectors = info.config.params.vectors
+        if isinstance(vectors, qmodels.VectorParams):
+            if (
+                vectors.size != self.dimension
+                or vectors.distance != qmodels.Distance.COSINE
+            ):
+                raise ValueError(
+                    "Qdrant collection vector configuration does not match "
+                    "the configured embedding provider."
+                )
 
     async def upsert(
         self, chunks: list[FilingChunk], vectors: list[list[float]]
@@ -114,9 +127,10 @@ class QdrantVectorStore:
         await self.ensure_collection()
         points = [
             qmodels.PointStruct(
-                id=chunk.chunk_id,
+                id=str(uuid5(NAMESPACE_URL, chunk.chunk_id)),
                 vector=vector,
                 payload={
+                    "chunk_id": chunk.chunk_id,
                     "ticker": chunk.metadata.ticker,
                     "filing_type": chunk.metadata.filing_type,
                     "filing_date": chunk.metadata.filing_date.isoformat(),
@@ -174,7 +188,7 @@ class QdrantVectorStore:
                     ),
                 )
                 chunk = FilingChunk(
-                    chunk_id=str(point.id),
+                    chunk_id=str(payload["chunk_id"]),
                     metadata=metadata,
                     section=str(payload["section"]),
                     text=str(payload["text"]),

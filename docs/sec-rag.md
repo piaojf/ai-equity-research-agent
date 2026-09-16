@@ -12,14 +12,16 @@ Question -> embedding -> ticker/filing filter -> relevant chunks -> citations
 to internal schemas, and sanitizes timeout, rate-limit and HTTP failures. It
 does not expose SEC response JSON directly to API clients.
 
-The local development path uses `DeterministicEmbeddingProvider` and
-`InMemoryVectorStore`. Production can replace those ports with an embedding
-provider and Qdrant without changing `SECAskService`.
+The local mock path uses `DeterministicEmbeddingProvider` and
+`InMemoryVectorStore`. Real mode uses `QdrantVectorStore` behind the same
+`VectorStore` protocol, with deterministic point IDs and filing identity fields
+stored in payloads.
 
 Every answer citation preserves ticker, filing type, filing date, accession
 number, section, chunk ID, source URL and excerpt. If retrieval returns no
 evidence, the service returns an explicit insufficient-evidence answer with
 `confidence=low`; it does not invent an answer.
 
-The Qdrant deployment and `POST /api/sec/ask` route are wired in the later
-integration phase after persistence and API dependency wiring stabilize.
+The real-mode `POST /api/sec/ask` route lazily ingests the latest SEC filing,
+upserts its chunks into Qdrant, retrieves evidence from Qdrant, and constructs
+citations from the retrieved filing metadata.

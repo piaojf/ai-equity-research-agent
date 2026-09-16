@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://equity:equity@postgres:5432/equity"
     redis_url: str = "redis://redis:6379/0"
     qdrant_url: str = "http://qdrant:6333"
+    qdrant_collection: str = "sec_filing_chunks"
 
     model_config = SettingsConfigDict(
         env_file=".env",

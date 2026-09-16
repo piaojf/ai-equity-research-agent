@@ -19,7 +19,6 @@ understanding, historical price retrieval, significant-move detection, news
 and announcement search, optional SEC lookup, cause analysis, evidence
 cross-checking and report generation. Conclusions retain `evidence_ids`.
 
-Local tests use `InMemoryTaskQueue`. Production deployment should replace that
-port with ARQ backed by Redis; the worker contract remains `run_once`, making
-retries and process supervision explicit without placing work in the HTTP
-request handler.
+Local mock tests use `InMemoryTaskQueue`. Real mode uses `RedisTaskQueue` backed
+by Redis/ARQ; the worker updates PostgreSQL task state and persists the final
+`ResearchReport`. The graph executes outside the HTTP request handler.
