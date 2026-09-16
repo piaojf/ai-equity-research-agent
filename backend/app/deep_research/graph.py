@@ -6,6 +6,7 @@ from typing import Literal, Protocol, TypedDict, cast
 from langgraph.graph import END, START, StateGraph
 
 from app.core.errors import AppError, ErrorCode
+from app.core.logging import get_logger
 from app.deep_research.llm import DeepResearchAnswerer
 from app.schemas.deep_research import (
     DeepResearchReport,
@@ -20,7 +21,9 @@ class DeepResearchMarketService(Protocol):
 
 
 class EvidenceSearchTool(Protocol):
-    async def search(self, ticker: str, around: list[date]) -> list[Evidence]: ...
+    async def search(
+        self, ticker: str, around: list[date], query: str | None = None
+    ) -> list[Evidence]: ...
 
 
 class CompiledDeepResearchGraph(Protocol):
@@ -30,6 +33,7 @@ class CompiledDeepResearchGraph(Protocol):
 class DeepResearchState(TypedDict, total=False):
     ticker: str
     question: str
+    request_id: str
     market_data: StockOverview | None
     significant_dates: list[date]
     evidence: list[Evidence]
@@ -42,9 +46,14 @@ class EmptyEvidenceSearchTool:
     def __init__(self, evidence_type: str) -> None:
         self.evidence_type = evidence_type
 
-    async def search(self, ticker: str, around: list[date]) -> list[Evidence]:
-        del ticker, around
+    async def search(
+        self, ticker: str, around: list[date], query: str | None = None
+    ) -> list[Evidence]:
+        del ticker, around, query
         return []
+
+
+logger = get_logger(__name__)
 
 
 class DeepResearchGraph:
@@ -101,6 +110,14 @@ class DeepResearchGraph:
             raise AppError(
                 ErrorCode.INVALID_TICKER, "Ticker is required.", status_code=400
             )
+        logger.info(
+            "deep_research_question_resolved",
+            extra={
+                "request_id": state.get("request_id"),
+                "ticker": ticker,
+                "question": state.get("question"),
+            },
+        )
         return {"ticker": ticker, "limitations": []}
 
     async def fetch_historical_price(
@@ -125,12 +142,64 @@ class DeepResearchGraph:
     ) -> dict[str, object]:
         market_data = state.get("market_data")
         if market_data is None:
+            logger.info(
+                "deep_research_price_analysis",
+                extra={
+                    "request_id": state.get("request_id"),
+                    "ticker": state["ticker"],
+                    "question": state.get("question"),
+                    "resolved_date_range": None,
+                    "price_events_detected": 0,
+                    "threshold": 0.05,
+                },
+            )
             return {"significant_dates": []}
         points = market_data.history.points
         significant: list[date] = []
-        for previous, current in zip(points, points[1:], strict=False):
-            if previous.close and abs(current.close / previous.close - 1) >= 0.05:
+        event_details: list[dict[str, object]] = []
+        threshold = 0.05
+        for index, current in enumerate(points[1:], start=1):
+            previous = points[index - 1]
+            daily_change = current.close / previous.close - 1
+            five_day_change = (
+                current.close / points[index - 5].close - 1 if index >= 5 else None
+            )
+            triggers: list[str] = []
+            if abs(daily_change) >= threshold:
+                triggers.append("daily_change")
+            if five_day_change is not None and abs(five_day_change) >= threshold:
+                triggers.append("five_day_change")
+            if triggers:
                 significant.append(current.date)
+                event_details.append(
+                    {
+                        "date": current.date.isoformat(),
+                        "daily_change": round(daily_change, 6),
+                        "five_day_change": (
+                            round(five_day_change, 6)
+                            if five_day_change is not None
+                            else None
+                        ),
+                        "threshold": threshold,
+                        "trigger_reason": ",".join(triggers),
+                    }
+                )
+        logger.info(
+            "deep_research_price_analysis",
+            extra={
+                "request_id": state.get("request_id"),
+                "ticker": state["ticker"],
+                "question": state.get("question"),
+                "resolved_date_range": {
+                    "start": points[0].date.isoformat(),
+                    "end": points[-1].date.isoformat(),
+                },
+                "price_events_detected": len(event_details),
+                "event_dates": [item["date"] for item in event_details],
+                "threshold": threshold,
+                "event_details": event_details,
+            },
+        )
         return {"significant_dates": significant}
 
     async def search_news_around_dates(
@@ -138,6 +207,20 @@ class DeepResearchGraph:
     ) -> dict[str, object]:
         evidence = await self.news_tool.search(
             state["ticker"], state.get("significant_dates", [])
+        )
+        logger.info(
+            "deep_research_news_search",
+            extra={
+                "request_id": state.get("request_id"),
+                "ticker": state["ticker"],
+                "provider": type(self.news_tool).__name__,
+                "query": state.get("question"),
+                "search_windows": [
+                    item.isoformat() for item in state.get("significant_dates", [])
+                ],
+                "raw_result_count": len(evidence),
+                "normalized_result_count": len(evidence),
+            },
         )
         return {"evidence": evidence}
 
@@ -147,13 +230,46 @@ class DeepResearchGraph:
         evidence = await self.announcement_tool.search(
             state["ticker"], state.get("significant_dates", [])
         )
+        logger.info(
+            "deep_research_announcement_search",
+            extra={
+                "request_id": state.get("request_id"),
+                "ticker": state["ticker"],
+                "provider": type(self.announcement_tool).__name__,
+                "query": state.get("question"),
+                "search_windows": [
+                    item.isoformat() for item in state.get("significant_dates", [])
+                ],
+                "raw_result_count": len(evidence),
+                "normalized_result_count": len(evidence),
+            },
+        )
         return {"evidence": [*state.get("evidence", []), *evidence]}
 
     async def search_sec_if_necessary(
         self, state: DeepResearchState
     ) -> dict[str, object]:
         if not state.get("evidence"):
-            return {"evidence": await self.sec_tool.search(state["ticker"], [])}
+            evidence = await self.sec_tool.search(
+                state["ticker"],
+                state.get("significant_dates", []),
+                state.get("question"),
+            )
+            logger.info(
+                "deep_research_sec_search_completed",
+                extra={
+                    "request_id": state.get("request_id"),
+                    "ticker": state["ticker"],
+                    "provider": type(self.sec_tool).__name__,
+                    "search_windows": [
+                        item.isoformat()
+                        for item in state.get("significant_dates", [])
+                    ],
+                    "raw_result_count": len(evidence),
+                    "normalized_result_count": len(evidence),
+                },
+            )
+            return {"evidence": evidence}
         return {}
 
     async def analyze_possible_causes(
@@ -194,6 +310,15 @@ class DeepResearchGraph:
             conclusion = await self.answerer.answer(
                 state["question"], evidence, state.get("major_events", [])
             )
+        logger.info(
+            "deep_research_report_generated",
+            extra={
+                "request_id": state.get("request_id"),
+                "ticker": state["ticker"],
+                "evidence_count": len(evidence),
+                "llm_called": self.answerer is not None and bool(evidence),
+            },
+        )
         confidence: Literal["low", "medium"] = (
             "low" if len(evidence) < 2 else "medium"
         )
@@ -209,6 +334,15 @@ class DeepResearchGraph:
             )
         }
 
-    async def ainvoke(self, ticker: str, question: str) -> DeepResearchReport:
-        result = await self.graph.ainvoke({"ticker": ticker, "question": question})
+    async def ainvoke(
+        self,
+        ticker: str,
+        question: str,
+        *,
+        request_id: str | None = None,
+    ) -> DeepResearchReport:
+        input_state: DeepResearchState = {"ticker": ticker, "question": question}
+        if request_id is not None:
+            input_state["request_id"] = request_id
+        result = await self.graph.ainvoke(input_state)
         return cast(DeepResearchState, result)["report"]

@@ -15,7 +15,7 @@ in-memory, or static behavior as real-provider acceptance.
 | `npm run lint` | exit 0 |
 | `npm run typecheck` | exit 0 |
 | `npm run build` | exit 0 |
-| Browser runtime | landing, stock, compare, SEC Ask, and Deep Research returned HTTP 200; pages were opened in the Codex browser panel |
+| Browser runtime | landing, stock, compare, SEC Ask, and Deep Research returned HTTP 200; interactive flows were exercised in the Codex browser panel |
 | Search | client-side ticker search is wired to `/stock/{ticker}` |
 | Stock detail | fetches market and research APIs at runtime |
 | SEC Ask | input, loading, success, error, low-evidence and citation rendering are wired |
@@ -82,11 +82,25 @@ Collection status was `green`, vector dimension was 32, and distance was
 Cosine. Retrieval returned three Qdrant citations with scores before DeepSeek
 generated the evidence-only answer.
 
+Deep Research used the same collection with query text `Why did NVDA fall
+recently?`, ticker filter `NVDA`, filing filter `10-K`, top-k 5, and no score
+threshold. Retrieved chunks were `279`, `51`, `263`, `105`, and `175`, with
+scores from `0.896402` to `0.908038`. No candidate was discarded during
+normalization.
+
 ## F. Deep Research and persistence
 
 `POST /api/deep-research` returned HTTP 202 with `task_id` and `request_id`.
 The real API submission moved through `queued`, `running`, and `completed`,
-created a durable `ResearchReport`, and used the running ARQ worker.
+created a durable `ResearchReport`, and used the running ARQ worker. Price
+analysis resolved the Yahoo history to `2026-06-16..2026-09-14` and detected
+18 events using the unchanged 5% daily/5-day threshold. The latest detected
+event was `2026-09-14` with a five-day change of `-0.084216`.
+
+For task `5be97bc7-7a45-457e-9fa2-364ca5c76a0d`, the report contained five SEC
+evidence items and five linked major events. DeepSeek synthesis was called
+with `evidence_count=5` and returned a medium-confidence, evidence-only
+conclusion.
 
 Redis returned `PING=True`. Real mode used `RedisTaskQueue` and the running ARQ
 worker; PostgreSQL remained the source of truth for durable task and report
@@ -101,19 +115,15 @@ the live tables include `companies`, `filings`, `research_tasks`, and
 ## G. Acceptance state
 
 ```text
-LOCAL DEMO READY: PARTIAL
+LOCAL DEMO READY: FULL
 ```
 
-Passed: frontend runtime/build, real market data, real financial data,
+Passed: frontend interactive flows/build, real market data, real financial data,
 deterministic scoring, LangGraph execution, SEC EDGAR/chunking/Qdrant RAG,
 HTTP 202 lifecycle, PostgreSQL repository persistence, Redis/ARQ-backed worker,
-DeepSeek SEC Ask, pytest, Ruff, and mypy.
+DeepSeek SEC Ask, DeepSeek Deep Research synthesis with five SEC evidence
+items, browser Stock/AI Research/SEC Ask/Compare/Deep Research/Error flows,
+pytest, Ruff, and mypy.
 
-Remaining acceptance evidence: the default Deep Research graph returned zero
-evidence for the requested market-move question, so it correctly returned a
-low-confidence no-evidence conclusion without calling the answerer;
-interactive browser click-through was not recorded beyond successful page/API
-runtime checks.
-
-No Phase 11 was created. The remaining items are external runtime
-configuration, not additional product scope.
+No Phase 11 was created and no product scope was added. Docker was not run in
+the local-development phase.

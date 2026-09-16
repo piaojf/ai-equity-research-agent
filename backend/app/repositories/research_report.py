@@ -1,5 +1,6 @@
 """Research report snapshot repository."""
 
+import json
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -77,4 +78,4 @@ class ResearchReportRepository(Repository):
 
     @staticmethod
     def to_deep_research_schema(stored: ResearchReport) -> DeepResearchReport:
-        return DeepResearchReport.model_validate(stored.payload)
+        return DeepResearchReport.model_validate_json(json.dumps(stored.payload))

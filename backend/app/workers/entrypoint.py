@@ -45,7 +45,11 @@ async def run_deep_research(
             "deep_research_worker_started",
             extra={"request_id": request_id, "task_id": task_id},
         )
-        report = await build_runtime_deep_research_graph().ainvoke(ticker, question)
+        report = await build_runtime_deep_research_graph().ainvoke(
+            ticker,
+            question,
+            request_id=request_id,
+        )
         async with database.transaction() as session:
             task = await ResearchTaskRepository(session).get(parsed_task_id)
             if task is None:
