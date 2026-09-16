@@ -140,6 +140,10 @@ textarea { line-height: 1.7; resize: vertical; }
 .comparison-row:last-child { border-bottom: 0; }
 .comparison-row strong { font-size: 19px; }
 .comparison-head { color: var(--quiet); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.compare-form { align-items: end; display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; margin-top: 22px; }
+.compare-field { display: grid; gap: 8px; }
+.compare-field span { color: var(--quiet); font-size: 12px; letter-spacing: .06em; }
+.compare-form .button { min-height: 48px; }
 .citation-list { display: grid; gap: 10px; margin-top: 18px; }
 .citation { background: rgba(3, 12, 23, .38); border: 1px solid var(--line); border-radius: 12px; display: block; padding: 13px; transition: .2s ease; }
 .citation:hover { border-color: var(--cyan); background: rgba(121,226,208,.06); }
@@ -155,4 +159,4 @@ textarea { line-height: 1.7; resize: vertical; }
 .footer-note { color: var(--quiet); font-size: 11px; line-height: 1.7; margin-top: 28px; }
 @media (max-width: 980px) { .app-frame { display: block; } .sidebar { align-items: center; display: grid; gap: 0 28px; grid-template-columns: auto 1fr; min-height: auto; padding: 14px 24px; position: relative; } .local-badge, .side-note, .side-footer { display: none; } .side-nav { display: flex; justify-content: flex-end; margin-top: 0; overflow-x: auto; } .side-link { padding: 9px 11px; white-space: nowrap; } .page-shell { padding-top: 26px; } .topbar { margin-bottom: 24px; } .hero-copy { padding: 12px 0 10px; } }
 @media (max-width: 760px) { .hero, .score-layout { grid-template-columns: 1fr; } }
-@media (max-width: 700px) { .sidebar { align-items: start; display: block; padding: 14px 18px 12px; } .side-nav { justify-content: flex-start; margin-top: 13px; } .shell, .page-shell { padding: 22px 18px 56px; } .topbar { margin-bottom: 28px; } .grid, .grid.four, .feature-grid { grid-template-columns: 1fr; } .hero-copy { padding: 6px 0 8px; } .search { grid-template-columns: 1fr; } .search .button { width: 100%; } h1 { font-size: clamp(42px, 13vw, 64px); } .comparison-row { gap: 8px; grid-template-columns: 1.3fr 1fr 1fr; } }
+@media (max-width: 700px) { .sidebar { align-items: start; display: block; padding: 14px 18px 12px; } .side-nav { justify-content: flex-start; margin-top: 13px; } .shell, .page-shell { padding: 22px 18px 56px; } .topbar { margin-bottom: 28px; } .grid, .grid.four, .feature-grid { grid-template-columns: 1fr; } .hero-copy { padding: 6px 0 8px; } .search, .compare-form { grid-template-columns: 1fr; } .search .button, .compare-form .button { width: 100%; } h1 { font-size: clamp(42px, 13vw, 64px); } .comparison-row { gap: 8px; grid-template-columns: 1.3fr 1fr 1fr; } }
