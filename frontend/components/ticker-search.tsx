@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { searchStocks } from "../lib/api";
 import type { StockSearchItem } from "../lib/types";
 
+function normalizeTickerInput(value: string): string {
+  return value.trim().replace(/^(?:\u67e5\u770b|\u7814\u7a76)\s*/u, "").toUpperCase();
+}
+
 export function TickerSearch() {
   const [ticker, setTicker] = useState("");
   const [suggestions, setSuggestions] = useState<StockSearchItem[]>([]);
@@ -43,7 +47,7 @@ export function TickerSearch() {
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const symbol = ticker.trim().toUpperCase();
+    const symbol = normalizeTickerInput(ticker);
     if (symbol) router.push(`/stock/${encodeURIComponent(symbol)}`);
   }
 

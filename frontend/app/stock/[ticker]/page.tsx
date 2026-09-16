@@ -6,9 +6,13 @@ export const dynamic = "force-dynamic";
 
 function scoreWidth(score: number) { return `${Math.max(0, Math.min(100, score))}%`; }
 
+function normalizeTicker(value: string): string {
+  return value.trim().replace(/^(?:\u67e5\u770b|\u7814\u7a76)\s*/u, "").toUpperCase();
+}
+
 export default async function StockPage({ params }: { params: Promise<{ ticker: string }> }) {
   const { ticker } = await params;
-  const symbol = ticker.toUpperCase();
+  const symbol = normalizeTicker(ticker);
   const [stock, research] = await Promise.all([getStock(symbol), getResearch(symbol)]);
   const metrics = research.financial_metrics;
   const scoreRows = [["基本面", research.fundamental_score.final_score], ["增长", research.growth_score.final_score], ["估值", research.valuation_score.final_score], ["风险质量", research.risk_score.final_score]] as const;
