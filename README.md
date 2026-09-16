@@ -199,8 +199,9 @@ nginx/             reverse-proxy configuration
 - Frontend package validation requires Node.js/npm; the backend is independently
   testable without them.
 
-The remaining operational setup is to provision local Qdrant and PostgreSQL
-credentials before running the full real-mode browser demo.
+Local runtime verification has provisioned PostgreSQL, started Qdrant HTTP,
+and exercised the Redis/ARQ worker. The remaining demo evidence is documented
+in `docs/local-demo-reality-check.md`.
 
 ## Portfolio material
 

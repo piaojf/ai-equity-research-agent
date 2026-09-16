@@ -1,6 +1,6 @@
 # Local Demo Readiness / Reality Check
 
-Date: 2026-09-15
+Date: 2026-09-16
 
 This report records observed runtime behavior. It does not mark mocked,
 in-memory, or static behavior as real-provider acceptance.
@@ -57,10 +57,10 @@ FCF growth.
 ## D. AI research
 
 LangGraph executed through the research nodes and Pydantic structured output
-validated successfully. The local result used `MockReportInterpreter` because
-no `DEEPSEEK_API_KEY` or local LLM service was configured. Therefore the
-real-LLM acceptance item is `SKIPPED: credential/service not configured`; the
-existing `LLMReportInterpreter` interface remains the integration boundary.
+validated successfully. The real-mode result used the configured DeepSeek
+report interpreter through the existing LLM boundary. The deterministic
+scoring engine still owns all numeric scores; the LLM only interprets the
+structured report.
 
 ## E. SEC RAG
 
@@ -75,32 +75,28 @@ chunks=356
 retrieved_citations=3
 ```
 
-Chunking, deterministic embeddings, in-memory retrieval, citation generation,
-and low-evidence behavior executed; the real-mode SEC Ask route now lazily
-ingests the latest filing before retrieval. Qdrant was not listening on
-`127.0.0.1:6333`, so real Qdrant ingestion/retrieval is recorded as
-`SKIPPED: Qdrant service not configured`, not as a passed production check.
-
-The runtime path is now wired to `QdrantVectorStore` in `DATA_MODE=real`, while
-mock mode retains `InMemoryVectorStore`. A local embedded Qdrant verification
-also confirmed deterministic upsert and metadata rehydration.
+The real-mode path used `QdrantVectorStore` against the local HTTP service at
+`http://127.0.0.1:6333`. The target 10-K produced 356 chunks and 356 points;
+running ingestion a second time left the target accession at 356 points.
+Collection status was `green`, vector dimension was 32, and distance was
+Cosine. Retrieval returned three Qdrant citations with scores before DeepSeek
+generated the evidence-only answer.
 
 ## F. Deep Research and persistence
 
 `POST /api/deep-research` returned HTTP 202 with `task_id` and `request_id`.
-The local in-memory queue scheduled a worker task and the task reached
-`completed` with an evidence-aware low-confidence report. Live market data was
-used by the workflow.
+The real API submission moved through `queued`, `running`, and `completed`,
+created a durable `ResearchReport`, and used the running ARQ worker.
 
-Redis was installed locally and `redis-cli ping` returned `PONG`. Real mode now
-uses `RedisTaskQueue` and the ARQ worker entry point; PostgreSQL remains the
-source of truth for durable task and report status. The real API path remains
-pending until the local PostgreSQL role and Qdrant service are configured.
+Redis returned `PING=True`. Real mode used `RedisTaskQueue` and the running ARQ
+worker; PostgreSQL remained the source of truth for durable task and report
+status. A controlled invalid-ticker job reached `failed` with structured
+`INVALID_TICKER` data instead of remaining `running`.
 
-A temporary native PostgreSQL 17 cluster was used to verify repository
-behavior: a completed `ResearchTask` and `ResearchReport` were written,
-reopened through a new database connection, and the report score was restored.
-The temporary cluster was stopped and removed after the check.
+PostgreSQL 17 is running locally with the `equity` role and
+`ai_equity_research` database. Alembic revision `338255031ae5` is applied, and
+the live tables include `companies`, `filings`, `research_tasks`, and
+`research_reports`.
 
 ## G. Acceptance state
 
@@ -109,13 +105,15 @@ LOCAL DEMO READY: PARTIAL
 ```
 
 Passed: frontend runtime/build, real market data, real financial data,
-deterministic scoring, LangGraph execution, SEC EDGAR/chunking/in-memory RAG,
-HTTP 202 lifecycle, native PostgreSQL repository persistence, DeepSeek API key
-and model availability check, pytest, Ruff, and mypy.
+deterministic scoring, LangGraph execution, SEC EDGAR/chunking/Qdrant RAG,
+HTTP 202 lifecycle, PostgreSQL repository persistence, Redis/ARQ-backed worker,
+DeepSeek SEC Ask, pytest, Ruff, and mypy.
 
-Not passed or skipped: full real-mode DeepSeek pipeline, Qdrant HTTP service,
-Redis/ARQ-backed API worker with PostgreSQL credentials, and browser click-level
-automation beyond the rendered runtime pages.
+Remaining acceptance evidence: the default Deep Research graph returned zero
+evidence for the requested market-move question, so it correctly returned a
+low-confidence no-evidence conclusion without calling the answerer;
+interactive browser click-through was not recorded beyond successful page/API
+runtime checks.
 
 No Phase 11 was created. The remaining items are external runtime
 configuration, not additional product scope.

@@ -10,6 +10,8 @@ work/*.log
 work/*.pid
 work/local-demo/
 work/local-ui-verification/
+work/qdrant-runtime/
+work/runtime-logs/
 outputs/*
 frontend/node_modules/
 frontend/.next/
