@@ -1,3 +1,4 @@
+import asyncio
 from datetime import date
 
 import pytest
@@ -41,4 +42,15 @@ async def test_qdrant_store_upsert_is_idempotent_and_rehydrates_metadata() -> No
     assert results[0].chunk.chunk_id == chunks[0].chunk_id
     assert results[0].chunk.metadata.accession_number == filing.accession_number
     assert results[0].chunk.text == chunks[0].text
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_qdrant_collection_initialization_is_single_flight() -> None:
+    client = AsyncQdrantClient(location=":memory:")
+    store = QdrantVectorStore("http://unused", client=client)
+
+    await asyncio.gather(*(store.ensure_collection() for _ in range(5)))
+
+    assert await client.collection_exists(collection_name=store.collection)
     await client.close()

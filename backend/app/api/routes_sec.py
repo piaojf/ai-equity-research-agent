@@ -1,12 +1,12 @@
 from functools import lru_cache
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.config import get_settings
 from app.core.errors import AppError, ErrorCode
 from app.core.request_id import get_request_id
-from app.providers.exceptions import ProviderError
+from app.providers.exceptions import ProviderConfigurationError, ProviderError
 from app.providers.llm.openai_compatible import OpenAICompatibleProvider
 from app.providers.sec.edgar import SECEDGARProvider
 from app.rag.embeddings import DeterministicEmbeddingProvider
@@ -18,21 +18,50 @@ router = APIRouter(prefix="/api/sec", tags=["sec"])
 
 
 class SECAskRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
     ticker: str = Field(min_length=1, max_length=10)
     question: str = Field(min_length=1, max_length=2_000)
     filing_type: str | None = Field(default=None, max_length=16)
     limit: int = Field(default=5, ge=1, le=20)
+
+    @field_validator("ticker")
+    @classmethod
+    def validate_ticker(cls, value: str) -> str:
+        normalized = value.strip().upper()
+        if not normalized or not all(
+            character.isalnum() or character in ".-" for character in normalized
+        ) or not normalized[0].isalpha():
+            raise ValueError(
+                "Ticker must contain 1-10 letters, digits, dots, or hyphens."
+            )
+        return normalized
+
+    @field_validator("filing_type")
+    @classmethod
+    def validate_filing_type(cls, value: str | None) -> str | None:
+        if value is not None and value not in {
+            "10-K",
+            "10-Q",
+            "8-K",
+            "20-F",
+            "6-K",
+            "40-F",
+        }:
+            raise ValueError("Unsupported SEC filing type.")
+        return value
 
 
 @lru_cache(maxsize=1)
 def get_sec_ask_service() -> SECAskService:
     settings = get_settings()
     provider = None
-    if (
-        settings.data_mode == "real"
-        and settings.sec_user_agent is not None
-        and settings.sec_user_agent.get_secret_value().strip()
-    ):
+    if settings.data_mode == "real":
+        if (
+            settings.sec_user_agent is None
+            or not settings.sec_user_agent.get_secret_value().strip()
+        ):
+            raise ProviderConfigurationError("SEC_USER_AGENT is required in real mode.")
         provider = SECEDGARProvider(
             settings.sec_user_agent,
             ticker_ciks={"NVDA": "1045810", "AMD": "2488"},

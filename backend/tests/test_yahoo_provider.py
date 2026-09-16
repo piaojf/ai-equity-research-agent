@@ -76,3 +76,34 @@ async def test_yahoo_provider_rejects_invalid_payload() -> None:
 
         with pytest.raises(InvalidTickerError, match="not supported"):
             await provider.get_quote("UNKNOWN")
+
+
+@pytest.mark.asyncio
+async def test_yahoo_provider_accepts_zero_volume_history() -> None:
+    payload = _payload()
+    chart = payload["chart"]
+    assert isinstance(chart, dict)
+    result = chart["result"]
+    assert isinstance(result, list)
+    first = result[0]
+    assert isinstance(first, dict)
+    meta = first["meta"]
+    assert isinstance(meta, dict)
+    meta["regularMarketVolume"] = 0
+    indicators = first["indicators"]
+    assert isinstance(indicators, dict)
+    quote = indicators["quote"]
+    assert isinstance(quote, list)
+    values = quote[0]
+    assert isinstance(values, dict)
+    values["volume"] = [0, 0]
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload))
+    ) as client:
+        provider = YahooFinanceMarketProvider(client=client)
+        quote_result = await provider.get_quote("NVDA")
+        history = await provider.get_history("NVDA", "3m")
+
+    assert quote_result.volume == 0
+    assert [point.volume for point in history] == [0, 0]

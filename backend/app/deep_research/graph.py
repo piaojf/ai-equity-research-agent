@@ -250,11 +250,26 @@ class DeepResearchGraph:
         self, state: DeepResearchState
     ) -> dict[str, object]:
         if not state.get("evidence"):
-            evidence = await self.sec_tool.search(
-                state["ticker"],
-                state.get("significant_dates", []),
-                state.get("question"),
-            )
+            try:
+                evidence = await self.sec_tool.search(
+                    state["ticker"],
+                    state.get("significant_dates", []),
+                    state.get("question"),
+                )
+            except Exception as exc:
+                logger.warning(
+                    "deep_research_sec_search_failed",
+                    extra={
+                        "request_id": state.get("request_id"),
+                        "ticker": state["ticker"],
+                        "provider": type(self.sec_tool).__name__,
+                        "error_type": type(exc).__name__,
+                    },
+                )
+                return {
+                    "evidence": [],
+                    "limitations": ["SEC evidence was unavailable."],
+                }
             logger.info(
                 "deep_research_sec_search_completed",
                 extra={

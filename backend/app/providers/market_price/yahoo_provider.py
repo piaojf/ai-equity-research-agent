@@ -105,6 +105,20 @@ class YahooFinanceMarketProvider(MarketDataProvider):
         return number
 
     @staticmethod
+    def _volume(value: Any) -> int:
+        try:
+            number = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ProviderUnavailableError(
+                "yahoo_finance", "Provider field 'volume' was not numeric."
+            ) from exc
+        if number < 0:
+            raise ProviderUnavailableError(
+                "yahoo_finance", "Provider field 'volume' was invalid."
+            )
+        return int(number)
+
+    @staticmethod
     def _timestamp(value: Any, field_name: str) -> datetime:
         try:
             return datetime.fromtimestamp(int(value), tz=UTC)
@@ -152,9 +166,7 @@ class YahooFinanceMarketProvider(MarketDataProvider):
                         high=YahooFinanceMarketProvider._number(values[1], "high"),
                         low=YahooFinanceMarketProvider._number(values[2], "low"),
                         close=YahooFinanceMarketProvider._number(values[3], "close"),
-                        volume=int(
-                            YahooFinanceMarketProvider._number(values[4], "volume")
-                        ),
+                        volume=YahooFinanceMarketProvider._volume(values[4]),
                     )
                 )
             except (ProviderUnavailableError, ValidationError) as exc:
@@ -184,16 +196,29 @@ class YahooFinanceMarketProvider(MarketDataProvider):
             previous_close = previous.close
         previous_value = self._number(previous_close, "previous_close")
         change = price - previous_value
+        try:
+            open_price = self._number(
+                meta.get("regularMarketOpen", latest.open), "open"
+            )
+            high_price = self._number(
+                meta.get("regularMarketDayHigh", latest.high), "high"
+            )
+            low_price = self._number(meta.get("regularMarketDayLow", latest.low), "low")
+            volume = self._volume(meta.get("regularMarketVolume", latest.volume))
+        except (ProviderUnavailableError, ValidationError) as exc:
+            raise ProviderUnavailableError(
+                self.name, "Provider returned invalid quote values."
+            ) from exc
         return PriceSnapshot(
             ticker=normalized,
             price=price,
             previous_close=previous_value,
             change=change,
             change_percent=change / previous_value * 100,
-            open=meta.get("regularMarketOpen", latest.open),
-            high=meta.get("regularMarketDayHigh", latest.high),
-            low=meta.get("regularMarketDayLow", latest.low),
-            volume=int(meta.get("regularMarketVolume", latest.volume)),
+            open=open_price,
+            high=high_price,
+            low=low_price,
+            volume=volume,
             currency=str(meta.get("currency", "USD")),
             as_of=self._timestamp(
                 meta.get("regularMarketTime", int(datetime.now(UTC).timestamp())),

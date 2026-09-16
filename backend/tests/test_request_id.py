@@ -22,3 +22,14 @@ def test_request_completion_log_contains_required_fields(
     assert record.path == "/health"
     assert record.status_code == 200
     assert isinstance(record.latency_ms, float)
+
+
+def test_validation_error_is_serializable_and_has_request_id(client) -> None:  # noqa: ANN001
+    response = client.post(
+        "/api/sec/ask",
+        json={"ticker": "NVDA", "question": "x", "filing_type": "invalid"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["request_id"]
+    assert response.json()["errors"][0]["details"]["validation_errors"]

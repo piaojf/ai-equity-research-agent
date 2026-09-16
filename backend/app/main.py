@@ -104,13 +104,22 @@ def create_app() -> FastAPI:
         _: Request,
         exc: RequestValidationError,
     ) -> JSONResponse:
+        validation_errors = []
+        for error in exc.errors():
+            normalized_error = dict(error)
+            if isinstance(normalized_error.get("ctx"), dict):
+                normalized_error["ctx"] = {
+                    key: str(value)
+                    for key, value in normalized_error["ctx"].items()
+                }
+            validation_errors.append(normalized_error)
         response = ErrorResponse(
             request_id=get_request_id(),
             errors=[
                 ErrorDetail(
                     code=ErrorCode.VALIDATION_ERROR,
                     message="Request validation failed.",
-                    details={"validation_errors": exc.errors()},
+                    details={"validation_errors": validation_errors},
                 )
             ],
         )

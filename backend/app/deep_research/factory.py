@@ -4,7 +4,7 @@ from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.deep_research.graph import DeepResearchGraph
 from app.deep_research.llm import StructuredDeepResearchAnswerer
-from app.providers.exceptions import ProviderError
+from app.providers.exceptions import ProviderConfigurationError, ProviderError
 from app.providers.llm.openai_compatible import OpenAICompatibleProvider
 from app.providers.sec.edgar import SECEDGARProvider
 from app.rag.embeddings import DeterministicEmbeddingProvider
@@ -139,7 +139,12 @@ def build_runtime_deep_research_graph() -> DeepResearchGraph:
             )
         )
     sec_tool = None
-    if settings.data_mode == "real" and settings.sec_user_agent is not None:
+    if settings.data_mode == "real":
+        if (
+            settings.sec_user_agent is None
+            or not settings.sec_user_agent.get_secret_value().strip()
+        ):
+            raise ProviderConfigurationError("SEC_USER_AGENT is required in real mode.")
         sec_tool = QdrantSECEvidenceSearchTool(
             settings.qdrant_url,
             settings.qdrant_collection,

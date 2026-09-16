@@ -107,7 +107,12 @@ export function DeepResearchForm({ initialTicker = DEFAULT_TICKER }: { initialTi
             <span className="tag">{statusText[task.status]}</span>
             <span className="tag cyan">任务 ID：{task.task_id.slice(0, 8)}…</span>
           </div>
-          {task.report ? (
+          {task.status === "failed" ? (
+            <div className="error-box">
+              <strong>任务失败</strong>
+              <p>{task.error ?? "后台任务执行失败。"}</p>
+            </div>
+          ) : task.report ? (
             <>
               <h2 style={{ marginTop: 18 }}>
                 {task.report.confidence === "high" ? "高可信度" : task.report.confidence === "medium" ? "中等可信度" : "低可信度"}

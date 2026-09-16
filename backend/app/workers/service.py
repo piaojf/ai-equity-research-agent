@@ -29,10 +29,12 @@ class DeepResearchService:
         self.graph = graph
         self._tasks: dict[UUID, _TaskRecord] = {}
 
-    async def submit(self, ticker: str, question: str) -> DeepResearchAccepted:
+    async def submit(
+        self, ticker: str, question: str, *, request_id: str = ""
+    ) -> DeepResearchAccepted:
         task_id = uuid4()
         self._tasks[task_id] = _TaskRecord()
-        await self.queue.enqueue(ResearchJob(task_id, ticker, question))
+        await self.queue.enqueue(ResearchJob(task_id, ticker, question, request_id))
         return DeepResearchAccepted(task_id=task_id)
 
     def status(self, task_id: UUID) -> DeepResearchTaskStatus | None:

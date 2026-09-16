@@ -95,7 +95,7 @@ class StockUniverseService:
             return response.json()
 
         async with httpx.AsyncClient(
-            timeout=self.settings.provider_timeout_seconds,
+            timeout=self.settings.sec_provider_timeout_seconds,
             follow_redirects=True,
         ) as client:
             response = await client.get(SEC_TICKERS_URL, headers=headers)

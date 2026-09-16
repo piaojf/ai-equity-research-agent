@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 
 class DeepResearchRequest(BaseModel):
@@ -10,6 +10,18 @@ class DeepResearchRequest(BaseModel):
 
     ticker: str = Field(min_length=1, max_length=10)
     question: str = Field(min_length=1, max_length=2_000)
+
+    @field_validator("ticker")
+    @classmethod
+    def normalize_ticker(cls, value: str) -> str:
+        normalized = value.strip().upper()
+        if not normalized or not normalized[0].isalpha() or not all(
+            character.isalnum() or character in ".-" for character in normalized
+        ):
+            raise ValueError(
+                "Ticker must contain 1-10 letters, digits, dots, or hyphens."
+            )
+        return normalized
 
 
 class Evidence(BaseModel):

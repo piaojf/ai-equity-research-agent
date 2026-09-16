@@ -8,7 +8,7 @@ import type {
   StockOverview,
 } from "./types";
 
-const publicApiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+const publicApiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const serverApiBase = process.env.BACKEND_INTERNAL_URL ?? "http://127.0.0.1:8000";
 
 function apiUrl(path: string): string {
@@ -20,7 +20,12 @@ function apiUrl(path: string): string {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(path), { ...init, cache: "no-store" });
-  const payload = (await response.json()) as ApiResponse<T>;
+  let payload: ApiResponse<T>;
+  try {
+    payload = (await response.json()) as ApiResponse<T>;
+  } catch {
+    throw new Error(`API request failed (${response.status}).`);
+  }
   if (!response.ok) {
     throw new Error(payload.errors?.[0]?.message ?? "API request failed.");
   }

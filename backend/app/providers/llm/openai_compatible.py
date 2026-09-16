@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urlparse
 
 import httpx
 from pydantic import BaseModel, SecretStr
@@ -8,6 +9,7 @@ class OpenAICompatibleProvider:
     """Structured-output adapter for OpenAI-compatible chat APIs."""
 
     name = "openai_compatible"
+    _allowed_hosts = {"api.deepseek.com", "api.openai.com"}
 
     def __init__(
         self,
@@ -23,8 +25,24 @@ class OpenAICompatibleProvider:
         )
         self.model = model
         self.base_url = base_url.rstrip("/")
+        self._validate_base_url(self.base_url)
         self.timeout_seconds = timeout_seconds
         self._client = client
+
+    @classmethod
+    def _validate_base_url(cls, base_url: str) -> None:
+        parsed = urlparse(base_url)
+        if (
+            parsed.scheme != "https"
+            or parsed.hostname not in cls._allowed_hosts
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError(
+                "LLM base URL must use HTTPS and a configured provider host."
+            )
 
     async def generate_structured(
         self,

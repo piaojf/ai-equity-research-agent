@@ -18,3 +18,7 @@ frontend/node_modules/
 frontend/.next/
 frontend/tsconfig.tsbuildinfo
 work/transaction/
+
+# Local verification artifacts and logs
+work/*
+!work/.gitkeep

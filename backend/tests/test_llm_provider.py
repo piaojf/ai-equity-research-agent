@@ -11,6 +11,11 @@ class ExampleOutput(BaseModel):
     answer: str
 
 
+def test_openai_compatible_provider_rejects_untrusted_base_url() -> None:
+    with pytest.raises(ValueError, match="configured provider host"):
+        OpenAICompatibleProvider(SecretStr("test-key"), base_url="http://attacker.test")
+
+
 @pytest.mark.asyncio
 async def test_openai_compatible_provider_validates_structured_output() -> None:
     captured: dict[str, object] = {}

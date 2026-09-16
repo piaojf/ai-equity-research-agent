@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import math
 from dataclasses import dataclass
 from datetime import date
@@ -96,28 +97,30 @@ class QdrantVectorStore:
         self.client = client or AsyncQdrantClient(url=url)
         self.collection = collection
         self.dimension = dimension
+        self._collection_lock = asyncio.Lock()
 
     async def ensure_collection(self) -> None:
-        if not await self.client.collection_exists(collection_name=self.collection):
-            await self.client.create_collection(
-                collection_name=self.collection,
-                vectors_config=qmodels.VectorParams(
-                    size=self.dimension,
-                    distance=qmodels.Distance.COSINE,
-                ),
-            )
-            return
-        info = await self.client.get_collection(self.collection)
-        vectors = info.config.params.vectors
-        if isinstance(vectors, qmodels.VectorParams):
-            if (
-                vectors.size != self.dimension
-                or vectors.distance != qmodels.Distance.COSINE
-            ):
-                raise ValueError(
-                    "Qdrant collection vector configuration does not match "
-                    "the configured embedding provider."
+        async with self._collection_lock:
+            if not await self.client.collection_exists(collection_name=self.collection):
+                await self.client.create_collection(
+                    collection_name=self.collection,
+                    vectors_config=qmodels.VectorParams(
+                        size=self.dimension,
+                        distance=qmodels.Distance.COSINE,
+                    ),
                 )
+                return
+            info = await self.client.get_collection(self.collection)
+            vectors = info.config.params.vectors
+            if isinstance(vectors, qmodels.VectorParams):
+                if (
+                    vectors.size != self.dimension
+                    or vectors.distance != qmodels.Distance.COSINE
+                ):
+                    raise ValueError(
+                        "Qdrant collection vector configuration does not match "
+                        "the configured embedding provider."
+                    )
 
     async def upsert(
         self, chunks: list[FilingChunk], vectors: list[list[float]]

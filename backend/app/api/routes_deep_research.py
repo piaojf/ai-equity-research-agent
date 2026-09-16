@@ -92,7 +92,9 @@ async def submit_deep_research(
         )
     else:
         service = get_in_memory_service()
-        accepted = await service.submit(request.ticker, request.question)
+        accepted = await service.submit(
+            request.ticker, request.question, request_id=get_request_id()
+        )
         asyncio.create_task(service.run_once())
     return ApiResponse(request_id=get_request_id(), data=accepted)
 
