@@ -45,6 +45,7 @@ class SECEDGARProvider(SECProvider):
             key.strip().upper(): str(cik).zfill(10)
             for key, cik in (ticker_ciks or {}).items()
         }
+        self._ticker_directory_loaded = False
 
     async def _get_json(self, url: str) -> dict[str, Any]:
         headers = {"User-Agent": self.user_agent, "Accept": "application/json"}
@@ -77,23 +78,24 @@ class SECEDGARProvider(SECProvider):
         if normalized in self._ticker_ciks:
             return self._ticker_ciks[normalized]
 
-        payload = await self._get_json(self.ticker_url)
+        if not self._ticker_directory_loaded:
+            payload = await self._get_json(self.ticker_url)
+            self._load_ticker_directory(payload)
+            self._ticker_directory_loaded = True
+        if normalized in self._ticker_ciks:
+            return self._ticker_ciks[normalized]
+        raise InvalidTickerError(normalized)
+
+    def _load_ticker_directory(self, payload: dict[str, Any]) -> None:
         for entry in payload.values():
             if not isinstance(entry, dict):
                 continue
             entry_ticker = entry.get("ticker")
             raw_cik = entry.get("cik_str", entry.get("cik"))
-            if (
-                isinstance(entry_ticker, str)
-                and entry_ticker.strip().upper() == normalized
-                and isinstance(raw_cik, (str, int))
-            ):
+            if isinstance(entry_ticker, str) and isinstance(raw_cik, (str, int)):
                 cik = str(raw_cik).strip()
                 if cik.isdigit() and len(cik) <= 10:
-                    normalized_cik = cik.zfill(10)
-                    self._ticker_ciks[normalized] = normalized_cik
-                    return normalized_cik
-        raise InvalidTickerError(normalized)
+                    self._ticker_ciks[entry_ticker.strip().upper()] = cik.zfill(10)
 
     async def list_filings(
         self, ticker: str, forms: list[str]

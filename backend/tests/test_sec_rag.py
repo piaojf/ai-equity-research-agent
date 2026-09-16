@@ -100,6 +100,43 @@ async def test_edgar_adapter_resolves_unmapped_ticker_without_network() -> None:
 
 
 @pytest.mark.asyncio
+async def test_edgar_adapter_caches_the_full_ticker_directory() -> None:
+    requested: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested.append(str(request.url))
+        if request.url == httpx.URL("https://www.sec.gov/files/company_tickers.json"):
+            return httpx.Response(
+                200,
+                json={
+                    "0": {"cik_str": 2488, "ticker": "AMD", "title": "AMD"},
+                    "1": {"cik_str": 1234, "ticker": "ZZZ", "title": "ZZZ"},
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "filings": {
+                    "recent": {
+                        "form": ["10-K"],
+                        "filingDate": ["2025-02-26"],
+                        "accessionNumber": ["0000000000-25-000001"],
+                        "primaryDocument": ["annual.htm"],
+                    }
+                }
+            },
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        provider = SECEDGARProvider("research@example.test", client=client)
+        await provider.list_filings("AMD", ["10-K"])
+        filings = await provider.list_filings("ZZZ", ["10-K"])
+
+    assert filings[0].accession_number == "0000000000-25-000001"
+    assert requested.count("https://www.sec.gov/files/company_tickers.json") == 1
+
+
+@pytest.mark.asyncio
 async def test_sec_ask_preserves_filing_identity_and_citation() -> None:
     class Answerer:
         async def answer(self, question, evidence):  # noqa: ANN001
