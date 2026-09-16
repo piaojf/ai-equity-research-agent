@@ -75,30 +75,44 @@ export function DeepResearchForm({ initialTicker = DEFAULT_TICKER }: { initialTi
         </div>
         <span className="tag amber">异步执行</span>
       </div>
-      <label htmlFor="deep-ticker" className="muted">研究标的</label>
-      <input
-        id="deep-ticker"
-        className="input"
-        aria-label="研究标的"
-        placeholder="输入美股代码，例如 NVDA、INTC"
-        value={ticker}
-        onChange={(event) => setTicker(event.target.value.toUpperCase())}
-        maxLength={10}
-        autoCapitalize="characters"
-        spellCheck={false}
-      />
-      <label htmlFor="deep-question" className="muted">研究问题</label>
-      <textarea
-        id="deep-question"
-        value={question}
-        onChange={(event) => setQuestion(event.target.value)}
-        style={{ minHeight: 120 }}
-      />
-      <div className="form-actions">
-        <button className="button" type="button" onClick={submit} disabled={loading}>
-          {loading ? "创建任务中…" : "开始深度研究"}
-        </button>
-        {task && <span className="tag cyan">任务：{statusText[task.status]}</span>}
+      <div className="research-dialog" role="group" aria-label="深度研究对话框">
+        <div className="dialog-header">
+          <div>
+            <span className="dialog-label">研究对话</span>
+            <p>告诉我你想研究哪家公司，以及最想了解的问题。</p>
+          </div>
+          <span className="tag cyan">支持所有美股代码</span>
+        </div>
+        <div className="dialog-context">
+          <span className="context-label">研究标的</span>
+          <input
+            id="deep-ticker"
+            aria-label="研究标的"
+            placeholder="输入股票代码，例如 NVDA、QCOM"
+            value={ticker}
+            onChange={(event) => setTicker(event.target.value.toUpperCase())}
+            maxLength={10}
+            autoCapitalize="characters"
+            spellCheck={false}
+          />
+        </div>
+        <textarea
+          id="deep-question"
+          aria-label="研究问题"
+          placeholder="例如：最近有哪些重大事项？公司的主要业务风险是什么？"
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          style={{ minHeight: 112 }}
+        />
+        <div className="dialog-footer">
+          <span className="dialog-hint">一个问题，一次完整研究。</span>
+          <div className="form-actions">
+            <button className="button" type="button" onClick={submit} disabled={loading}>
+              {loading ? "创建任务中…" : "开始深度研究"}
+            </button>
+            {task && <span className="tag cyan">任务：{statusText[task.status]}</span>}
+          </div>
+        </div>
       </div>
       {error && <div className="error-box"><strong>任务出现问题</strong><p>{error}</p></div>}
       {task && (

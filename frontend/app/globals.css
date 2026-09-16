@@ -164,9 +164,21 @@ textarea { line-height: 1.7; resize: vertical; }
 .stage { align-items: center; background: rgba(255,255,255,.025); border: 1px solid var(--line); border-radius: 12px; display: flex; gap: 12px; padding: 12px; }
 .stage-number { align-items: center; background: rgba(121,226,208,.1); border-radius: 9px; color: var(--cyan); display: grid; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; height: 28px; place-items: center; width: 28px; }
 .form-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.research-dialog { background: linear-gradient(145deg, rgba(5, 16, 30, .72), rgba(9, 24, 39, .58)); border: 1px solid rgba(121,226,208,.2); border-radius: 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 18px 42px rgba(0,0,0,.12); display: grid; gap: 16px; padding: 18px; }
+.dialog-header { align-items: start; display: flex; gap: 16px; justify-content: space-between; }
+.dialog-label { color: var(--text); font-size: 16px; font-weight: 800; }
+.dialog-header p { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 6px 0 0; }
+.dialog-context { align-items: center; background: rgba(255,255,255,.035); border: 1px solid var(--line); border-radius: 11px; display: flex; gap: 12px; padding: 4px 13px; }
+.context-label { color: var(--quiet); font-size: 12px; white-space: nowrap; }
+.dialog-context input { background: transparent; border: 0; color: var(--text); min-width: 0; outline: none; padding: 10px 0; width: 100%; }
+.dialog-context input::placeholder { color: var(--quiet); }
+.dialog-context:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(121,226,208,.1); }
+.research-dialog textarea { background: rgba(5, 14, 26, .56); min-height: 112px; }
+.dialog-footer { align-items: center; display: flex; gap: 14px; justify-content: space-between; }
+.dialog-hint { color: var(--quiet); font-size: 11px; }
 .empty-state { border: 1px dashed var(--line-strong); border-radius: 14px; color: var(--muted); padding: 18px; }
 .error-box { background: rgba(255,133,133,.08); border: 1px solid rgba(255,133,133,.2); border-radius: 14px; color: #ffc0c0; padding: 14px; }
 .footer-note { color: var(--quiet); font-size: 11px; line-height: 1.7; margin-top: 28px; }
 @media (max-width: 980px) { .app-frame { display: block; } .sidebar { align-items: center; display: grid; gap: 0 28px; grid-template-columns: auto 1fr; min-height: auto; padding: 14px 24px; position: relative; } .local-badge, .side-note, .side-footer { display: none; } .side-nav { display: flex; justify-content: flex-end; margin-top: 0; overflow-x: auto; } .side-link { padding: 9px 11px; white-space: nowrap; } .page-shell { padding-top: 26px; } .topbar { margin-bottom: 24px; } .hero-copy { padding: 12px 0 10px; } }
 @media (max-width: 760px) { .hero, .score-layout { grid-template-columns: 1fr; } }
-@media (max-width: 700px) { .sidebar { align-items: start; display: block; padding: 14px 18px 12px; } .side-nav { justify-content: flex-start; margin-top: 13px; } .shell, .page-shell { padding: 22px 18px 56px; } .topbar { margin-bottom: 28px; } .grid, .grid.four, .feature-grid { grid-template-columns: 1fr; } .hero-copy { padding: 6px 0 8px; } .search, .compare-form { grid-template-columns: 1fr; } .search .button, .compare-form .button { width: 100%; } h1 { font-size: clamp(42px, 13vw, 64px); } .comparison-row { gap: 8px; grid-template-columns: 1.3fr 1fr 1fr; } }
+@media (max-width: 700px) { .dialog-header, .dialog-footer { align-items: stretch; flex-direction: column; } .dialog-header .tag { align-self: flex-start; } .dialog-footer .form-actions { align-items: stretch; flex-direction: column; } .dialog-footer .button { width: 100%; } .sidebar { align-items: start; display: block; padding: 14px 18px 12px; } .side-nav { justify-content: flex-start; margin-top: 13px; } .shell, .page-shell { padding: 22px 18px 56px; } .topbar { margin-bottom: 28px; } .grid, .grid.four, .feature-grid { grid-template-columns: 1fr; } .hero-copy { padding: 6px 0 8px; } .search, .compare-form { grid-template-columns: 1fr; } .search .button, .compare-form .button { width: 100%; } h1 { font-size: clamp(42px, 13vw, 64px); } .comparison-row { gap: 8px; grid-template-columns: 1.3fr 1fr 1fr; } }
