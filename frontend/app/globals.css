@@ -50,8 +50,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .brand-symbol { align-items: center; background: linear-gradient(145deg, #d7ff86, #78ded0); border-radius: 14px; box-shadow: 0 8px 24px rgba(121, 226, 208, .16); display: grid; height: 40px; overflow: hidden; place-items: center; position: relative; width: 40px; }
 .logo-orbit { border: 2px solid #0a1a28; border-bottom-color: transparent; border-radius: 50%; height: 22px; position: absolute; transform: rotate(-35deg); width: 22px; }
 .logo-core { background: #0a1a28; border-radius: 50%; height: 6px; position: absolute; width: 6px; }
+.brand-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .brand-name { font-size: 16px; font-weight: 800; letter-spacing: -.03em; }
-.brand-caption { color: var(--quiet); font-size: 10px; letter-spacing: .18em; margin-top: 4px; text-transform: uppercase; }
+.brand-caption { color: var(--quiet); font-size: 10px; letter-spacing: .18em; line-height: 1.2; text-transform: uppercase; }
 .local-badge { align-self: flex-start; background: rgba(200, 243, 106, .09); border: 1px solid rgba(200, 243, 106, .25); border-radius: 999px; color: var(--signal); font-size: 10px; letter-spacing: .08em; margin-top: 28px; padding: 7px 10px; }
 .side-nav { display: grid; gap: 6px; margin-top: 26px; }
 .side-link { align-items: center; border: 1px solid transparent; border-radius: 12px; color: var(--muted); display: flex; font-size: 13px; gap: 11px; padding: 11px 12px; transition: .2s ease; }
