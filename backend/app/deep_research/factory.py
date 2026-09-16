@@ -19,7 +19,14 @@ logger = get_logger(__name__)
 class QdrantSECEvidenceSearchTool:
     """Use the existing SEC filing collection as Deep Research evidence."""
 
-    def __init__(self, url: str, collection: str, user_agent: str) -> None:
+    def __init__(
+        self,
+        url: str,
+        collection: str,
+        user_agent: str,
+        *,
+        timeout_seconds: float = 30.0,
+    ) -> None:
         self.embedder = DeterministicEmbeddingProvider()
         self.store = QdrantVectorStore(
             url,
@@ -27,7 +34,9 @@ class QdrantSECEvidenceSearchTool:
             dimension=self.embedder.dimension,
         )
         self.ingestion = SECAskService(
-            SECEDGARProvider(user_agent), self.embedder, self.store
+            SECEDGARProvider(user_agent, timeout_seconds=timeout_seconds),
+            self.embedder,
+            self.store,
         )
 
     async def search(
@@ -135,6 +144,7 @@ def build_runtime_deep_research_graph() -> DeepResearchGraph:
             settings.qdrant_url,
             settings.qdrant_collection,
             settings.sec_user_agent.get_secret_value(),
+            timeout_seconds=settings.sec_provider_timeout_seconds,
         )
     return DeepResearchGraph(
         get_market_service(),

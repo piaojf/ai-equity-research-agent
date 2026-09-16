@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
     openai_base_url: str = "https://api.openai.com/v1"
     provider_timeout_seconds: float = Field(default=10.0, gt=0)
+    sec_provider_timeout_seconds: float = Field(default=30.0, gt=0)
     provider_max_retries: int = Field(default=2, ge=0, le=5)
     provider_retry_delay_seconds: float = Field(default=1.0, ge=0)
     log_level: str = "INFO"

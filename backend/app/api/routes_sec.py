@@ -36,7 +36,7 @@ def get_sec_ask_service() -> SECAskService:
         provider = SECEDGARProvider(
             settings.sec_user_agent,
             ticker_ciks={"NVDA": "1045810", "AMD": "2488"},
-            timeout_seconds=settings.provider_timeout_seconds,
+            timeout_seconds=settings.sec_provider_timeout_seconds,
         )
     embedder = DeterministicEmbeddingProvider()
     vector_store: VectorStore
