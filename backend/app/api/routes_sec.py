@@ -87,7 +87,7 @@ def get_sec_ask_service() -> SECAskService:
                 settings.deepseek_api_key,
                 model=settings.deepseek_model,
                 base_url=settings.deepseek_base_url,
-                timeout_seconds=settings.provider_timeout_seconds * 3,
+                timeout_seconds=settings.provider_timeout_seconds * 6,
             )
         )
     return SECAskService(

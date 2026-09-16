@@ -33,7 +33,7 @@ def get_research_graph() -> ResearchGraph:
                 settings.deepseek_api_key,
                 model=settings.deepseek_model,
                 base_url=settings.deepseek_base_url,
-                timeout_seconds=settings.provider_timeout_seconds * 3,
+                timeout_seconds=settings.provider_timeout_seconds * 6,
             )
         )
     elif (
@@ -45,7 +45,7 @@ def get_research_graph() -> ResearchGraph:
                 settings.openai_api_key,
                 model=settings.openai_model,
                 base_url=settings.openai_base_url,
-                timeout_seconds=settings.provider_timeout_seconds * 3,
+                timeout_seconds=settings.provider_timeout_seconds * 6,
             )
         )
     return build_research_graph(
