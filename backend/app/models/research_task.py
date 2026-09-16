@@ -33,6 +33,7 @@ class ResearchTask(TimestampedModel):
         default=False,
         nullable=False,
     )
+    current_stage: Mapped[str | None] = mapped_column(String(64))
     status: Mapped[ResearchTaskStatus] = mapped_column(
         Enum(ResearchTaskStatus, native_enum=False, length=16),
         default=ResearchTaskStatus.QUEUED,

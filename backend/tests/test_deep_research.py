@@ -52,6 +52,30 @@ async def test_deep_research_graph_keeps_evidence_ids_and_confidence() -> None:
 
 
 @pytest.mark.asyncio
+async def test_deep_research_graph_reports_display_stages() -> None:
+    market = MarketService(
+        MarketProviderRegistry(Settings(data_mode="mock")),
+        Settings(data_mode="mock", provider_retry_delay_seconds=0),
+    )
+    stages: list[str] = []
+
+    async def record_stage(stage: str) -> None:
+        stages.append(stage)
+
+    await DeepResearchGraph(market).ainvoke(
+        "NVDA", "Why did NVDA move?", stage_callback=record_stage
+    )
+
+    assert stages == [
+        "understand_question",
+        "detect_significant_price_moves",
+        "search_news_and_announcements",
+        "cross_check_evidence",
+        "generate_research_report",
+    ]
+
+
+@pytest.mark.asyncio
 async def test_deep_research_llm_prompt_marks_inputs_as_untrusted() -> None:
     prompts: dict[str, str] = {}
 
@@ -111,6 +135,7 @@ async def test_queue_service_returns_queued_then_completed_status() -> None:
     completed = service.status(accepted.task_id)
     assert completed is not None
     assert completed.status == "completed"
+    assert completed.current_stage == "generate_research_report"
     assert completed.report is not None
 
 

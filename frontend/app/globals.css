@@ -163,6 +163,14 @@ textarea { line-height: 1.7; resize: vertical; }
 .stage-list { display: grid; gap: 9px; }
 .stage { align-items: center; background: rgba(255,255,255,.025); border: 1px solid var(--line); border-radius: 12px; display: flex; gap: 12px; padding: 12px; }
 .stage-number { align-items: center; background: rgba(121,226,208,.1); border-radius: 9px; color: var(--cyan); display: grid; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; height: 28px; place-items: center; width: 28px; }
+.stage-status { color: var(--quiet); font-size: 11px; margin-left: auto; }
+.stage.is-active { background: rgba(121,226,208,.08); border-color: rgba(121,226,208,.45); box-shadow: 0 0 0 3px rgba(121,226,208,.06); }
+.stage.is-active .stage-number { background: rgba(121,226,208,.22); }
+.stage.is-active .stage-status { color: var(--cyan); }
+.stage.is-complete .stage-number { background: rgba(200,243,106,.14); color: var(--signal); }
+.stage.is-complete .stage-status { color: var(--signal); }
+.stage.is-failed { border-color: rgba(255,133,133,.4); }
+.stage.is-failed .stage-number, .stage.is-failed .stage-status { color: var(--danger); }
 .form-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .research-dialog { background: linear-gradient(145deg, rgba(5, 16, 30, .72), rgba(9, 24, 39, .58)); border: 1px solid rgba(121,226,208,.2); border-radius: 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 18px 42px rgba(0,0,0,.12); display: grid; gap: 16px; padding: 18px; }
 .dialog-header { align-items: start; display: flex; gap: 16px; justify-content: space-between; }

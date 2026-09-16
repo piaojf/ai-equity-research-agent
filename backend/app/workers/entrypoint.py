@@ -13,6 +13,7 @@ from app.deep_research.factory import build_runtime_deep_research_graph
 from app.models.enums import ResearchTaskStatus
 from app.repositories.research_report import ResearchReportRepository
 from app.repositories.research_task import ResearchTaskRepository
+from app.schemas.deep_research import ResearchStage
 
 logger = get_logger(__name__)
 
@@ -41,6 +42,19 @@ async def run_deep_research(
                 return
             await ResearchTaskRepository(session).mark_running(task)
 
+        async def update_stage(stage: ResearchStage) -> None:
+            async with database.transaction() as stage_session:
+                current_task = await ResearchTaskRepository(stage_session).get(
+                    parsed_task_id
+                )
+                if current_task is not None and current_task.status not in (
+                    ResearchTaskStatus.COMPLETED,
+                    ResearchTaskStatus.FAILED,
+                ):
+                    await ResearchTaskRepository(stage_session).mark_stage(
+                        current_task, stage
+                    )
+
         logger.info(
             "deep_research_worker_started",
             extra={"request_id": request_id, "task_id": task_id},
@@ -49,6 +63,7 @@ async def run_deep_research(
             ticker,
             question,
             request_id=request_id,
+            stage_callback=update_stage,
         )
         async with database.transaction() as session:
             task = await ResearchTaskRepository(session).get(parsed_task_id)

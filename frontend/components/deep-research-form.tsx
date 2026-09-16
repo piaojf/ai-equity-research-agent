@@ -3,16 +3,49 @@
 import { useEffect, useState } from "react";
 
 import { getDeepResearch, submitDeepResearch } from "../lib/api";
-import type { DeepResearchTask } from "../lib/types";
+import type { DeepResearchStage, DeepResearchTask } from "../lib/types";
 
 const DEFAULT_TICKER = "NVDA";
 const TICKER_PATTERN = /^[A-Z][A-Z0-9.-]{0,9}$/;
+const workflowStages: ReadonlyArray<{ key: DeepResearchStage; label: string }> = [
+  { key: "understand_question", label: "理解问题" },
+  { key: "detect_significant_price_moves", label: "识别重要波动" },
+  { key: "search_news_and_announcements", label: "搜索新闻与公告" },
+  { key: "cross_check_evidence", label: "交叉核对证据" },
+  { key: "generate_research_report", label: "生成研究报告" },
+];
+
 const statusText: Record<DeepResearchTask["status"], string> = {
   queued: "排队中",
   running: "执行中",
   completed: "已完成",
   failed: "失败",
 };
+
+function getStageStatus(
+  task: DeepResearchTask | null,
+  index: number,
+): { label: string; className: string } {
+  if (!task) return { label: index === 0 ? "入口" : "待执行", className: "" };
+  if (task.status === "completed") return { label: "已完成", className: "is-complete" };
+
+  const currentIndex = task.current_stage
+    ? workflowStages.findIndex((stage) => stage.key === task.current_stage)
+    : -1;
+  if (task.status === "queued") return { label: "排队中", className: "" };
+  if (currentIndex < 0) {
+    return index === 0
+      ? { label: task.status === "failed" ? "失败" : "执行中", className: task.status === "failed" ? "is-failed" : "is-active" }
+      : { label: "待执行", className: "" };
+  }
+  if (index < currentIndex) return { label: "已完成", className: "is-complete" };
+  if (index === currentIndex) {
+    return task.status === "failed"
+      ? { label: "失败", className: "is-failed" }
+      : { label: "执行中", className: "is-active" };
+  }
+  return { label: "待执行", className: "" };
+}
 
 function normalizeTicker(value: string): string {
   return value.trim().toUpperCase();
@@ -67,7 +100,8 @@ export function DeepResearchForm({ initialTicker = DEFAULT_TICKER }: { initialTi
   }
 
   return (
-    <section className="research-dialog stack" role="group" aria-label="深度研究对话框">
+    <>
+      <section className="research-dialog stack" role="group" aria-label="深度研究对话框">
       <div className="section-heading">
         <div>
           <span className="eyebrow">研究对话</span>
@@ -132,6 +166,28 @@ export function DeepResearchForm({ initialTicker = DEFAULT_TICKER }: { initialTi
           ) : <p className="muted">任务已接受，系统正在轮询后台状态。</p>}
         </div>
       )}
-    </section>
+      </section>
+      <section className="card workflow-card" style={{ marginTop: 16 }}>
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">工作流阶段</span>
+            <h2>从问题到报告</h2>
+          </div>
+          <span className="tag">5 个阶段</span>
+        </div>
+        <div className="stage-list">
+          {workflowStages.map((stage, index) => {
+            const stageStatus = getStageStatus(task, index);
+            return (
+              <div key={stage.key} className={`stage ${stageStatus.className}`}>
+                <span className="stage-number">0{index + 1}</span>
+                <span>{stage.label}</span>
+                <span className="stage-status">{stageStatus.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </>
   );
 }

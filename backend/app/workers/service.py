@@ -19,6 +19,7 @@ from app.workers.queue import ResearchJob, TaskQueue
 @dataclass
 class _TaskRecord:
     status: str = "queued"
+    current_stage: str | None = None
     report: DeepResearchReport | None = None
     error: str | None = None
 
@@ -44,6 +45,7 @@ class DeepResearchService:
         return DeepResearchTaskStatus(
             task_id=task_id,
             status=record.status,  # type: ignore[arg-type]
+            current_stage=record.current_stage,  # type: ignore[arg-type]
             report=record.report,
             error=record.error,
         )
@@ -54,8 +56,14 @@ class DeepResearchService:
             return False
         record = self._tasks[job.task_id]
         record.status = "running"
+
+        async def update_stage(stage: str) -> None:
+            record.current_stage = stage
+
         try:
-            record.report = await self.graph.ainvoke(job.ticker, job.question)
+            record.report = await self.graph.ainvoke(
+                job.ticker, job.question, stage_callback=update_stage
+            )
             record.status = "completed"
         except Exception:
             record.status = "failed"
@@ -124,6 +132,7 @@ class DurableDeepResearchService:
             return DeepResearchTaskStatus(
                 task_id=task.id,
                 status=task.status.value,
+                current_stage=task.current_stage,  # type: ignore[arg-type]
                 report=report,
                 error=task.error_message,
             )

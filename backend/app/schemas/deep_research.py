@@ -44,6 +44,15 @@ class MajorEvent(BaseModel):
     evidence_ids: list[str] = Field(min_length=1, max_length=20)
 
 
+ResearchStage = Literal[
+    "understand_question",
+    "detect_significant_price_moves",
+    "search_news_and_announcements",
+    "cross_check_evidence",
+    "generate_research_report",
+]
+
+
 class DeepResearchReport(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
@@ -64,5 +73,6 @@ class DeepResearchAccepted(BaseModel):
 class DeepResearchTaskStatus(BaseModel):
     task_id: UUID
     status: Literal["queued", "running", "completed", "failed"]
+    current_stage: ResearchStage | None = None
     report: DeepResearchReport | None = None
     error: str | None = None

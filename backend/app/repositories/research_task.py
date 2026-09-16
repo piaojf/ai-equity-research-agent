@@ -50,6 +50,11 @@ class ResearchTaskRepository(Repository):
         await self.flush("mark research task running")
         return task
 
+    async def mark_stage(self, task: ResearchTask, stage: str) -> ResearchTask:
+        task.current_stage = stage
+        await self.flush("mark research task stage")
+        return task
+
     async def mark_completed(self, task: ResearchTask) -> ResearchTask:
         task.status = ResearchTaskStatus.COMPLETED
         task.completed_at = datetime.now(UTC)

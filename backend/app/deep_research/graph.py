@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from datetime import date
 from typing import Literal, Protocol, TypedDict, cast
 
@@ -12,6 +13,7 @@ from app.schemas.deep_research import (
     DeepResearchReport,
     Evidence,
     MajorEvent,
+    ResearchStage,
 )
 from app.schemas.market import StockOverview
 
@@ -24,6 +26,9 @@ class EvidenceSearchTool(Protocol):
     async def search(
         self, ticker: str, around: list[date], query: str | None = None
     ) -> list[Evidence]: ...
+
+
+StageProgressCallback = Callable[[ResearchStage], Awaitable[None]]
 
 
 class CompiledDeepResearchGraph(Protocol):
@@ -39,7 +44,9 @@ class DeepResearchState(TypedDict, total=False):
     evidence: list[Evidence]
     major_events: list[MajorEvent]
     limitations: list[str]
+    current_stage: ResearchStage
     report: DeepResearchReport
+    stage_callback: StageProgressCallback
 
 
 class EmptyEvidenceSearchTool:
@@ -104,7 +111,18 @@ class DeepResearchGraph:
         builder.add_edge("generate_research_report", END)
         return cast(CompiledDeepResearchGraph, builder.compile())
 
+    async def _set_stage(
+        self, state: DeepResearchState, stage: ResearchStage
+    ) -> None:
+        if state.get("current_stage") == stage:
+            return
+        state["current_stage"] = stage
+        callback = state.get("stage_callback")
+        if callback is not None:
+            await callback(stage)
+
     async def understand_question(self, state: DeepResearchState) -> dict[str, object]:
+        await self._set_stage(state, "understand_question")
         ticker = state.get("ticker", "").strip().upper()
         if not ticker:
             raise AppError(
@@ -140,6 +158,7 @@ class DeepResearchGraph:
     async def detect_significant_price_moves(
         self, state: DeepResearchState
     ) -> dict[str, object]:
+        await self._set_stage(state, "detect_significant_price_moves")
         market_data = state.get("market_data")
         if market_data is None:
             logger.info(
@@ -205,6 +224,7 @@ class DeepResearchGraph:
     async def search_news_around_dates(
         self, state: DeepResearchState
     ) -> dict[str, object]:
+        await self._set_stage(state, "search_news_and_announcements")
         evidence = await self.news_tool.search(
             state["ticker"], state.get("significant_dates", [])
         )
@@ -227,6 +247,7 @@ class DeepResearchGraph:
     async def search_company_announcements(
         self, state: DeepResearchState
     ) -> dict[str, object]:
+        await self._set_stage(state, "search_news_and_announcements")
         evidence = await self.announcement_tool.search(
             state["ticker"], state.get("significant_dates", [])
         )
@@ -249,6 +270,7 @@ class DeepResearchGraph:
     async def search_sec_if_necessary(
         self, state: DeepResearchState
     ) -> dict[str, object]:
+        await self._set_stage(state, "search_news_and_announcements")
         if not state.get("evidence"):
             try:
                 evidence = await self.sec_tool.search(
@@ -301,6 +323,7 @@ class DeepResearchGraph:
         return {"major_events": events}
 
     async def cross_check_evidence(self, state: DeepResearchState) -> dict[str, object]:
+        await self._set_stage(state, "cross_check_evidence")
         unique: dict[str, Evidence] = {
             item.evidence_id: item for item in state.get("evidence", [])
         }
@@ -309,6 +332,7 @@ class DeepResearchGraph:
     async def generate_research_report(
         self, state: DeepResearchState
     ) -> dict[str, object]:
+        await self._set_stage(state, "generate_research_report")
         evidence = state.get("evidence", [])
         limitations = state.get("limitations", [])
         if not evidence:
@@ -355,9 +379,21 @@ class DeepResearchGraph:
         question: str,
         *,
         request_id: str | None = None,
+        stage_callback: StageProgressCallback | None = None,
     ) -> DeepResearchReport:
         input_state: DeepResearchState = {"ticker": ticker, "question": question}
         if request_id is not None:
             input_state["request_id"] = request_id
+        if stage_callback is not None:
+            last_stage: ResearchStage | None = None
+
+            async def emit_stage(stage: ResearchStage) -> None:
+                nonlocal last_stage
+                if stage == last_stage:
+                    return
+                last_stage = stage
+                await stage_callback(stage)
+
+            input_state["stage_callback"] = emit_stage
         result = await self.graph.ainvoke(input_state)
         return cast(DeepResearchState, result)["report"]

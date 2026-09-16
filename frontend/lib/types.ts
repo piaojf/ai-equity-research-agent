@@ -22,6 +22,13 @@ export interface ResearchInput { ticker: string; question?: string; include_sec_
 export interface Evidence { evidence_id: string; source: string; title: string; url?: string; published_at?: string; summary: string; evidence_type: "market" | "news" | "announcement" | "sec"; }
 export interface MajorEvent { event_date?: string; description: string; evidence_ids: string[]; }
 export interface DeepResearchReport { ticker: string; question: string; conclusion: string; major_events: MajorEvent[]; evidence: Evidence[]; confidence: Confidence; limitations: string[]; }
-export interface DeepResearchTask { task_id: string; status: "queued" | "running" | "completed" | "failed"; report?: DeepResearchReport; error?: string; }
+export type DeepResearchStage =
+  | "understand_question"
+  | "detect_significant_price_moves"
+  | "search_news_and_announcements"
+  | "cross_check_evidence"
+  | "generate_research_report";
+
+export interface DeepResearchTask { task_id: string; status: "queued" | "running" | "completed" | "failed"; current_stage?: DeepResearchStage | null; report?: DeepResearchReport; error?: string; }
 export interface SECAskRequest { ticker: string; question: string; filing_type?: string; limit?: number; }
 export interface SECAskResult { ticker: string; question: string; answer: string; citations: Citation[]; confidence: Confidence; limitations: string[]; }
