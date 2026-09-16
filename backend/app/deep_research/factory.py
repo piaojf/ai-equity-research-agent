@@ -43,7 +43,6 @@ class QdrantSECEvidenceSearchTool:
         retrieved = await self.store.search(
             vector,
             ticker=normalized_ticker,
-            filing_type="10-K",
             limit=5,
         )
         if not retrieved:
@@ -52,7 +51,6 @@ class QdrantSECEvidenceSearchTool:
                 retrieved = await self.store.search(
                     vector,
                     ticker=normalized_ticker,
-                    filing_type="10-K",
                     limit=5,
                 )
             except ProviderError as exc:
@@ -73,7 +71,7 @@ class QdrantSECEvidenceSearchTool:
                 "embedding_dimension": self.embedder.dimension,
                 "query": search_query,
                 "ticker_filter": normalized_ticker,
-                "filing_filter": "10-K",
+                "filing_filter": "10-K, 10-Q, 8-K, 20-F, 6-K, 40-F",
                 "section_filter": None,
                 "top_k": 5,
                 "score_threshold": None,

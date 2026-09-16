@@ -1,12 +1,17 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 from pydantic import TypeAdapter
 
 from app.core.config import Settings
 from app.db.session import Database
+from app.deep_research.factory import QdrantSECEvidenceSearchTool
 from app.deep_research.graph import DeepResearchGraph
 from app.providers.market_price.registry import MarketProviderRegistry
+from app.providers.sec.base import FilingMetadata
+from app.rag.chunking import FilingChunk
+from app.rag.embeddings import DeterministicEmbeddingProvider
+from app.rag.vector_store import RetrievedChunk
 from app.schemas.deep_research import Evidence
 from app.services.market import MarketService
 from app.workers.queue import InMemoryTaskQueue
@@ -103,3 +108,63 @@ async def test_durable_service_persists_task_and_enqueues_request_id() -> None:
     assert queue.jobs[0].task_id == accepted.task_id
     assert queue.jobs[0].request_id == "req-durable"
     await database.dispose()
+
+
+@pytest.mark.asyncio
+async def test_deep_research_retrieves_quarterly_filings_for_any_sec_ticker() -> None:
+    class Store:
+        collection = "sec_filing_chunks"
+
+        def __init__(self) -> None:
+            self.filing_filters: list[str | None] = []
+
+        async def ensure_collection(self) -> None:
+            return None
+
+        async def search(
+            self,
+            vector: list[float],
+            *,
+            ticker: str,
+            filing_type: str | None = None,
+            limit: int = 5,
+        ) -> list[RetrievedChunk]:
+            del vector, ticker, limit
+            self.filing_filters.append(filing_type)
+            if len(self.filing_filters) == 1:
+                return []
+            filing = FilingMetadata(
+                ticker="SPCX",
+                filing_type="10-Q",
+                filing_date=date(2026, 8, 4),
+                accession_number="0001628280-26-052535",
+                source_url=TypeAdapter(str).validate_python(
+                    "https://www.sec.gov/Archives/edgar/data/1181412/spcx-20260630.htm"
+                ),
+            )
+            chunk = FilingChunk(
+                chunk_id="0001628280-26-052535:filing:0",
+                metadata=filing,
+                section="filing",
+                text="Quarterly filing evidence.",
+            )
+            return [RetrievedChunk(chunk=chunk, score=0.91)]
+
+    class Ingestion:
+        def __init__(self) -> None:
+            self.tickers: list[str] = []
+
+        async def ensure_latest_filing_ingested(self, ticker: str) -> None:
+            self.tickers.append(ticker)
+
+    tool = object.__new__(QdrantSECEvidenceSearchTool)
+    tool.embedder = DeterministicEmbeddingProvider()
+    tool.store = Store()  # type: ignore[assignment]
+    tool.ingestion = Ingestion()  # type: ignore[assignment]
+
+    evidence = await tool.search("spcx", [], "最近有哪些重大事项？")
+
+    assert tool.store.filing_filters == [None, None]
+    assert tool.ingestion.tickers == ["SPCX"]
+    assert evidence[0].evidence_type == "sec"
+    assert evidence[0].title.startswith("10-Q")

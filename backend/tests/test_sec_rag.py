@@ -171,6 +171,35 @@ async def test_latest_filing_ingestion_prefers_annual_filing() -> None:
     assert fetched == ["10-K"]
 
 
+@pytest.mark.asyncio
+async def test_latest_filing_ingestion_falls_back_to_current_report() -> None:
+    requested_forms: list[str] = []
+    fetched: list[str] = []
+
+    class Provider:
+        async def list_filings(
+            self, ticker: str, forms: list[str]
+        ) -> list[FilingMetadata]:
+            del ticker
+            requested_forms.extend(forms)
+            return [_filing().model_copy(update={"filing_type": "8-K"})]
+
+        async def fetch_filing(self, filing: FilingMetadata) -> str:
+            fetched.append(filing.filing_type)
+            return "Current report evidence."
+
+    service = SECAskService(
+        provider=Provider(),  # type: ignore[arg-type]
+        embedder=DeterministicEmbeddingProvider(),
+        vector_store=InMemoryVectorStore(),
+    )
+
+    await service.ensure_latest_filing_ingested("SPCX")
+
+    assert requested_forms == ["10-K", "10-Q", "8-K", "20-F", "6-K", "40-F"]
+    assert fetched == ["8-K"]
+
+
 def test_chunking_strips_html_and_rejects_invalid_overlap() -> None:
     chunks = chunk_filing(
         _filing(), "<p>Risk&nbsp; factors</p>", chunk_size=30, overlap=2

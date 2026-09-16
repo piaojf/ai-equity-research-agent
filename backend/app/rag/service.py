@@ -12,6 +12,9 @@ from app.rag.embeddings import EmbeddingProvider
 from app.rag.vector_store import RetrievedChunk, VectorStore
 from app.schemas.citations import Citation
 
+_SEC_RESEARCH_FORMS = ["10-K", "10-Q", "8-K", "20-F", "6-K", "40-F"]
+_SEC_ANNUAL_FORMS = {"10-K", "20-F", "40-F"}
+
 
 class SECAskResult(BaseModel):
     ticker: str = Field(min_length=1)
@@ -107,11 +110,15 @@ class SECAskService:
         normalized = ticker.strip().upper()
         if normalized in self._ingested_tickers:
             return
-        filings = await self.provider.list_filings(normalized, ["10-K", "10-Q"])
+        filings = await self.provider.list_filings(normalized, _SEC_RESEARCH_FORMS)
         if not filings:
             return
         filing = next(
-            (candidate for candidate in filings if candidate.filing_type == "10-K"),
+            (
+                candidate
+                for candidate in filings
+                if candidate.filing_type in _SEC_ANNUAL_FORMS
+            ),
             filings[0],
         )
         text = await self.provider.fetch_filing(filing)
