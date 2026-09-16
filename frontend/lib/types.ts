@@ -7,6 +7,7 @@ export interface ApiResponse<T> { request_id: string; data: T; errors: ApiErrorI
 export interface PriceSnapshot { ticker: string; price: number; previous_close: number; change: number; change_percent: number; open?: number; high?: number; low?: number; volume?: number; currency: string; as_of: string; retrieved_at: string; source: string; source_url?: string; is_delayed: boolean; }
 export interface HistoricalPricePoint { date: string; open: number; high: number; low: number; close: number; volume: number; }
 export interface StockOverview { ticker: string; quote: PriceSnapshot; history: { ticker: string; period: string; points: HistoricalPricePoint[]; source: string; as_of: string; retrieved_at: string; is_delayed: boolean; }; }
+export interface StockSearchItem { ticker: string; company_name: string; exchange?: string; }
 
 export interface MetricValue { value: number | null; source: string; source_url?: string; as_of?: string; retrieved_at: string; }
 export interface FinancialMetrics { ticker: string; currency?: string; revenue?: MetricValue; revenue_growth?: MetricValue; eps?: MetricValue; eps_growth?: MetricValue; gross_margin?: MetricValue; operating_margin?: MetricValue; net_income?: MetricValue; free_cash_flow?: MetricValue; fcf_growth?: MetricValue; pe?: MetricValue; forward_pe?: MetricValue; peg?: MetricValue; limitations: string[]; }

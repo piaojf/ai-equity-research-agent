@@ -4,6 +4,7 @@ import type {
   EquityResearchReport,
   SECAskRequest,
   SECAskResult,
+  StockSearchItem,
   StockOverview,
 } from "./types";
 
@@ -28,6 +29,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getStock(ticker: string): Promise<StockOverview> {
   return request<StockOverview>(`/api/stocks/${encodeURIComponent(ticker)}`);
+}
+
+export function searchStocks(query: string, limit = 8): Promise<StockSearchItem[]> {
+  const params = new URLSearchParams({ q: query, limit: String(limit) });
+  return request<StockSearchItem[]>(`/api/stocks/search?${params.toString()}`);
 }
 
 export function getResearch(ticker: string): Promise<EquityResearchReport> {

@@ -63,5 +63,11 @@ class StockOverview(BaseModel):
     history: MarketHistory
 
 
+class StockSearchItem(BaseModel):
+    ticker: str = Field(min_length=1)
+    company_name: str = Field(min_length=1)
+    exchange: str | None = None
+
+
 def date_as_utc(value: date) -> datetime:
     return datetime(value.year, value.month, value.day, tzinfo=UTC)

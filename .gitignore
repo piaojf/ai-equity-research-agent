@@ -12,6 +12,7 @@ work/local-demo/
 work/local-ui-verification/
 work/qdrant-runtime/
 work/runtime-logs/
+work/cache/
 outputs/*
 frontend/node_modules/
 frontend/.next/
