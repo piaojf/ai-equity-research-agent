@@ -25,9 +25,11 @@ class YahooFinanceMarketProvider(MarketDataProvider):
         self,
         timeout_seconds: float = 10.0,
         client: httpx.AsyncClient | None = None,
+        proxy_url: str | None = None,
     ) -> None:
         self.timeout_seconds = timeout_seconds
         self._client = client
+        self.proxy_url = proxy_url
 
     def _source_url(self, ticker: str, period: str) -> HttpUrl:
         ranges = {"1m": "1mo", "3m": "3mo", "6m": "6mo", "1y": "1y"}
@@ -52,6 +54,7 @@ class YahooFinanceMarketProvider(MarketDataProvider):
                 async with httpx.AsyncClient(
                     timeout=self.timeout_seconds,
                     headers={"User-Agent": "AI-Equity-Research-Agent/0.1"},
+                    proxy=self.proxy_url,
                 ) as client:
                     response = await client.get(url, params=params)
             if response.status_code == 429:

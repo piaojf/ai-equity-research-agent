@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     data_mode: Literal["mock", "real", "hybrid"] = Field(default="mock")
     market_provider: Literal["yahoo", "alpha_vantage"] = "yahoo"
+    yahoo_proxy_url: str | None = None
     alpha_vantage_api_key: SecretStr | None = None
     sec_user_agent: SecretStr | None = None
     deepseek_api_key: SecretStr | None = None

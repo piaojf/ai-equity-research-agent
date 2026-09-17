@@ -22,6 +22,7 @@ class MarketProviderRegistry:
         if self.settings.market_provider == "yahoo":
             return YahooFinanceMarketProvider(
                 timeout_seconds=self.settings.provider_timeout_seconds,
+                proxy_url=self.settings.yahoo_proxy_url,
             )
         if self.settings.market_provider != "alpha_vantage":
             raise ProviderConfigurationError(

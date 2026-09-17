@@ -37,6 +37,8 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://equity:equity@postgres:5432/equity}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     expose: ["8000"]
     depends_on:
       postgres:
@@ -61,6 +63,8 @@ services:
       APP_ENV: production
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://equity:equity@postgres:5432/equity}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       backend:
         condition: service_healthy

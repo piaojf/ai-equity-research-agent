@@ -23,6 +23,14 @@ The backend health check is `GET /health`. Nginx routes `/api/` to FastAPI and
 all other paths to the Next.js frontend. The worker consumes Redis jobs through
 ARQ and uses the same LangGraph deep-research workflow.
 
+## Yahoo through the VPS Xray node
+
+Set `YAHOO_PROXY_URL=http://host.docker.internal:10811` when Yahoo requests
+must use the VPS Xray HTTP inbound. The backend and worker map
+`host.docker.internal` to the Docker host. The Xray inbound must accept the
+Docker bridge gateway (not only `127.0.0.1`); keep ports 10811/10812 blocked
+from the public Internet with the VPS firewall.
+
 ## HTTPS with Let's Encrypt
 
 Point DNS at the VPS, set the real `server_name` in `nginx/nginx.conf`, and

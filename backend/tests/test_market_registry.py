@@ -49,3 +49,15 @@ def test_real_mode_defaults_to_keyless_yahoo_provider() -> None:
     provider = MarketProviderRegistry(Settings(data_mode="real")).get_provider()
 
     assert isinstance(provider, YahooFinanceMarketProvider)
+
+
+def test_real_mode_yahoo_provider_uses_configured_proxy() -> None:
+    settings = Settings(
+        data_mode="real",
+        yahoo_proxy_url="http://127.0.0.1:10811",
+    )
+
+    provider = MarketProviderRegistry(settings).get_provider()
+
+    assert isinstance(provider, YahooFinanceMarketProvider)
+    assert provider.proxy_url == "http://127.0.0.1:10811"
