@@ -6,19 +6,13 @@ __pycache__/
 .ruff_cache/
 *.egg-info/
 .env
-work/*.log
-work/*.pid
-work/local-demo/
-work/local-ui-verification/
-work/qdrant-runtime/
-work/runtime-logs/
-work/cache/
-outputs/*
+.env.*
+!.env.example
+!deploy/.env.production.example
+.DS_Store
 frontend/node_modules/
 frontend/.next/
 frontend/tsconfig.tsbuildinfo
-work/transaction/
-
-# Local verification artifacts and logs
+outputs/*
 work/*
 !work/.gitkeep

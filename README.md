@@ -1,222 +1,149 @@
-# AI Equity Research Agent
+# SignalRoom AI · AI Equity Research Agent
 
-An evidence-first US equity research workspace built as a portfolio project for
-AI Agent Engineer and Forward Deployed Engineer roles. The system separates
-data acquisition, deterministic financial scoring, citation-aware retrieval,
-agent orchestration, background research, and the presentation layer.
+[![CI](https://github.com/piaojf/ai-equity-research-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/piaojf/ai-equity-research-agent/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Why this project
+SignalRoom AI 是一个面向真实投研流程的证据优先美股研究工作台，也是 AI Agent Engineer / Forward Deployed Engineer 作品集项目。
 
-Most research demos hide the path from a number to a conclusion. This project
-keeps that path inspectable:
+它把市场行情、基本面、SEC 文件、可解释评分、RAG 检索和 Deep Research Agent 拆成可验证的工程边界：每个核心结论都尽量回到原始数据、引用和可复现的处理路径。
 
-- market prices, fundamentals, news, and SEC filings use separate provider
-  interfaces;
-- core scores are deterministic Python calculations, not LLM decisions;
-- every score component preserves its raw value, normalized score, weight,
-  contribution, and source;
-- SEC answers use filing identity and chunk identity instead of fragile PDF page
-  numbers;
-- long-running questions cross an HTTP 202 task boundary and a worker-ready
-  LangGraph workflow.
+SignalRoom AI is an evidence-first US equity research workspace designed to demonstrate production-minded AI agent engineering, data integration, explainable scoring, retrieval, and deployment practices.
 
-## Delivered scope
+## 页面介绍
 
-| Phase | Delivered capability |
-| --- | --- |
-| 1 | FastAPI foundation, config, request IDs, structured logs, errors, health, tests |
-| 2 | Market price provider interface, mock mode, Alpha Vantage adapter, stock API |
-| 3 | SEC Company Facts fundamentals and explainable deterministic scoring |
-| 4 | LangGraph equity research workflow and structured report output |
-| 5 | PostgreSQL models, Alembic migration, async repositories |
-| 6 | SEC EDGAR adapter, chunking, embeddings, vector-store boundary, citation-aware ask |
-| 7 | Evidence-first Deep Research graph, task queue abstraction, ARQ entry point |
-| 8 | Next.js research dashboard, stock, compare, SEC Ask, and Deep Research views |
-| 9 | Linux VPS Docker Compose, Nginx routing, worker, backup and deployment scripts |
-| 10 | QA, documentation, demo script, interview preparation, and release review |
-
-## Architecture
-
-```mermaid
-flowchart TD
-    Browser["Next.js Dashboard"] --> Nginx["Nginx + HTTPS"]
-    Nginx --> API["FastAPI"]
-    API --> Services["Application Services"]
-    Services --> Market["MarketPriceProvider"]
-    Services --> Fundamentals["FinancialDataProvider"]
-    Services --> Score["Deterministic Scoring"]
-    Services --> Agent["LangGraph Equity Research"]
-    API --> Task["ResearchTask"]
-    Task --> Redis["Redis / ARQ"]
-    Redis --> Worker["Deep Research Worker"]
-    Worker --> DR["Evidence-first LangGraph"]
-    DR --> Report["ResearchReport"]
-    API --> Postgres[("PostgreSQL")]
-    DR --> Qdrant[("Qdrant")]
-    Fundamentals --> SECFacts["SEC Company Facts"]
-    Agent --> EDGAR["SEC EDGAR / News"]
-```
-
-### Agent workflow
-
-```mermaid
-flowchart LR
-    Start["Request"] --> Router["Intent router"] --> M["Market data"]
-    M --> F["Financial analysis"] --> N["News analysis"]
-    N --> S["Optional SEC research"] --> R["Risk analysis"]
-    R --> Final["Structured report"]
-```
-
-### Deep Research workflow
-
-```mermaid
-flowchart LR
-    Q["Question"] --> P["Price history"] --> D["Significant moves"]
-    D --> E["News + announcements"] --> SEC["SEC when necessary"]
-    SEC --> A["Possible causes"] --> C["Cross-check evidence"]
-    C --> G["Research report"]
-```
-
-## API
-
-| Method | Endpoint | Purpose |
+| 页面 | 入口 | 用途 |
 | --- | --- | --- |
-| GET | `/health` | Service and data-mode health |
-| GET | `/api/stocks/{ticker}` | Quote and historical price overview |
-| POST | `/api/research` | Run the structured LangGraph research workflow |
-| GET | `/api/research/{ticker}` | Run the workflow for a ticker from the dashboard |
-| POST | `/api/sec/ask` | Citation-aware SEC question answering |
-| POST | `/api/deep-research` | Queue a long-running research task; returns HTTP 202 |
-| GET | `/api/deep-research/{task_id}` | Poll task status and completed report |
+| 总览 | / | 查看研究工作台入口和示例股票 |
+| 股票详情 | /stock/NVDA | 查看行情、评分拆解、财务数据和引用来源 |
+| 股票对比 | /compare | 手动输入任意两家美股公司代码后进行比较 |
+| SEC 研究问答 | /sec-ask | 在一个问题框中输入“研究 AAPL 的主要业务风险”并返回引用 |
+| 深度研究 | /deep-research | 在一个问题框中输入标的和研究问题，异步生成研究报告 |
 
-Every successful response includes a top-level `request_id`. Every handled
-error uses `ErrorResponse`, and request logs include request ID, method, path,
-status code, and latency in milliseconds.
+当前前端页面为中文本地演示界面，默认支持手动输入美股代码，不依赖固定的 NVDA / AMD 页面状态。
 
-## Local development
+## 核心能力
 
-The current development environment is native Windows Python. Docker is not
-required for local development, and `DATA_MODE=mock` starts without provider
-keys or external services.
+- Provider Interface：行情、基本面、新闻、SEC EDGAR 均通过 Provider 边界接入。
+- Deterministic Scoring：核心数字评分由确定性 Python 引擎计算，LLM 不决定分数。
+- ScoreBreakdown：保存原始值、归一化分数、权重、贡献值和数据来源，可回答“为什么是这个分数”。
+- SEC Citation：使用 ticker、filing type、filing date、accession number、section、chunk id、source URL 和 excerpt 追踪证据。
+- SEC RAG：清洗 SEC Filing、切块、生成 embedding、写入 Qdrant，并进行引用感知检索。
+- Agent Workflow：LangGraph 负责研究流程编排，DeepSeek V4.1 Flash 负责叙事层，不替代确定性计算。
+- Background Job：FastAPI 返回 HTTP 202 和 task_id，Redis / ARQ Worker 执行异步 Deep Research，PostgreSQL 持久化任务和报告。
+- Mock Mode：DATA_MODE=mock 可在没有真实 API Key 时启动，默认测试不访问外部 API。
 
-```powershell
-py -3.12 -m venv .venv
-.venv\Scripts\python.exe -m pip install -e ".\backend[dev]"
-.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --reload --host 127.0.0.1 --port 8000
-```
+## 系统架构
 
-Useful URLs:
+浏览器 → Next.js Dashboard → Nginx / HTTPS → FastAPI Backend
 
-- <http://127.0.0.1:8000/health>
-- <http://127.0.0.1:8000/docs>
-- <http://127.0.0.1:8000/redoc>
-- <http://127.0.0.1:3000> when the frontend is run separately
+FastAPI → Provider Interfaces → Yahoo / Finnhub / SEC Company Facts / SEC EDGAR
+FastAPI → Deterministic Scoring → ScoreBreakdown → ResearchReport
+FastAPI → ResearchTask → Redis / ARQ → Worker → LangGraph Deep Research
+Deep Research → Qdrant Retrieval + DeepSeek → PostgreSQL ResearchReport
 
-### DeepSeek V4.1 Flash
+生产目标为 Linux VPS + Docker Compose + Nginx + HTTPS，服务包括 nginx、frontend、backend、worker、postgres、qdrant 和 redis。Docker 是上线阶段配置，不是当前 Windows 本机研发的前置依赖。
 
-The narrative research layer is configured for DeepSeek's OpenAI-compatible API.
-The API model identifier is `deepseek-flash`, which maps to DeepSeek-V4.1-Flash;
-the base URL is `https://api.deepseek.com`. Copy `.env.example` to `.env` and
-fill in only `DEEPSEEK_API_KEY`:
+## 本机开发
 
-```dotenv
-DEEPSEEK_API_KEY=replace-with-your-key
-DEEPSEEK_MODEL=deepseek-flash
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-```
+### 1. 创建环境
 
-The adapter uses JSON mode and validates the result against the existing
-Pydantic `ReportInterpretation` schema. Deterministic numeric scores remain
-outside the LLM boundary.
+Windows PowerShell：
 
-Example API calls:
+    py -3.12 -m venv .venv
+    .venv\Scripts\python.exe -m pip install -e ".\backend[dev]"
+    Copy-Item .env.example .env
 
-```powershell
-Invoke-RestMethod http://127.0.0.1:8000/health
-Invoke-RestMethod http://127.0.0.1:8000/api/stocks/NVDA
-```
+本地无真实数据源时，保持 .env 中 DATA_MODE=mock。真实模式需要填写相应 Provider Key，并连接 PostgreSQL、Redis 和 Qdrant。
 
-## Quality gates
+### 2. 启动 Backend
 
-```powershell
-.venv\Scripts\python.exe -m pytest -q
-.venv\Scripts\ruff.exe check backend\app backend\tests
-.venv\Scripts\mypy.exe backend\app
-```
+    .venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --reload --host 127.0.0.1 --port 8000
 
-Tests use deterministic mock providers and local HTTP transports. Real-provider
-tests are explicitly marked integration and are not part of the default test
-run. See [docs/5-minute-demo.md](docs/5-minute-demo.md) for a repeatable
-product demonstration.
+### 3. 启动 Frontend
 
-## Production deployment target
+    cd frontend
+    npm ci
+    npm run dev
 
-The production target is a Linux VPS with Docker Compose, Nginx, and HTTPS.
-The stack contains `nginx`, `frontend`, `backend`, `worker`, `postgres`,
-`qdrant`, and `redis`; only Nginx publishes public ports. Vercel and Render
-are optional alternatives, not the primary architecture.
+访问：
 
-```bash
-cp deploy/.env.production.example .env
-docker compose config
-docker compose up -d --build
-docker compose ps
-```
+- http://127.0.0.1:3000
+- http://127.0.0.1:8000/docs
+- http://127.0.0.1:8000/redoc
 
-Read [docs/deployment.md](docs/deployment.md) for certificates, backups,
-health checks, and operations. Docker build is intentionally a deployment
-stage gate, not a local Phase 1-8 dependency.
+### 4. 启动本机 ARQ Worker（真实异步研究）
 
-## Project structure
+从项目根目录执行，确保 Worker 读取根目录 .env：
 
-```text
-backend/app/
-  agents/          LangGraph equity research workflow
-  api/             FastAPI routes
-  core/            config, logging, request IDs, errors
-  db/              async database/session helpers
-  deep_research/   evidence-first background workflow
-  models/          PostgreSQL persistence models
-  providers/       market, fundamentals, and SEC interfaces/adapters
-  rag/             SEC chunking, embeddings, vector-store service
-  repositories/    persistence access boundaries
-  schemas/         API, financial, research, scoring, and citation contracts
-  scoring/         deterministic explainable scoring engine
-  workers/         queue abstraction and ARQ deployment entry point
-frontend/          Next.js dashboard
-docs/              architecture, contracts, RAG, deployment, demo, interviews
-deploy/            Linux startup and backup scripts
-nginx/             reverse-proxy configuration
-```
+    $env:PYTHONPATH="$PWD\backend"
+    .venv\Scripts\python.exe -m arq app.workers.entrypoint.WorkerSettings
 
-## Known limitations and roadmap
+Qdrant 本机运行地址为 http://127.0.0.1:6333，Redis 默认地址为 redis://localhost:6379/0。
 
-- Local mock mode is the deterministic demo path; real provider credentials are
-  not committed.
-- Mock mode uses in-memory task/vector stores for deterministic tests. Real mode
-  uses Redis/ARQ for task delivery, PostgreSQL for task/report state, and Qdrant
-  for SEC filing retrieval.
-- Frontend package validation requires Node.js/npm; the backend is independently
-  testable without them.
+## DeepSeek 配置
 
-Local runtime verification has provisioned PostgreSQL, started Qdrant HTTP,
-and exercised the Redis/ARQ worker. The remaining demo evidence is documented
-in `docs/local-demo-reality-check.md`.
+项目使用 DeepSeek 的 OpenAI-compatible API。API Key 只写入本机 .env，不要提交到 GitHub：
 
-## Portfolio material
+    DEEPSEEK_API_KEY=your-key
+    DEEPSEEK_MODEL=deepseek-flash
+    DEEPSEEK_BASE_URL=https://api.deepseek.com
 
-- [Architecture](docs/architecture.md)
-- [Shared contracts](docs/shared-contracts.md)
-- [Dependency DAG](docs/dependency-dag.md)
-- [SEC RAG design](docs/sec-rag.md)
-- [Deep Research design](docs/deep-research.md)
-- [Frontend design](docs/frontend.md)
-- [Linux deployment](docs/deployment.md)
-- [Resume project description](docs/resume-project-description.md)
-- [Five-minute demo](docs/5-minute-demo.md)
-- [Top 20 interview questions](docs/interview-top-20.md)
+DeepSeek 只负责研究叙事和结构化解释；核心数值评分仍由确定性引擎产生。
 
-## Disclaimer
+## 测试与质量检查
 
-This project is for educational and research purposes only. It does not
-provide financial advice. Generated analysis must be independently verified.
+Backend：
+
+    .venv\Scripts\python.exe -m pytest -q
+    .venv\Scripts\ruff.exe check backend\app backend\tests
+    .venv\Scripts\mypy.exe backend\app
+
+Frontend：
+
+    cd frontend
+    npm run lint
+    npm run typecheck
+    npm run build
+
+项目内的最终测试 Agent 位于 tools/final_test_agent.py，会执行质量检查和本地页面冒烟检查，并写入 reports/final-test-report.md。
+
+## 项目结构
+
+    backend/app/api             FastAPI 路由
+    backend/app/core            配置、日志、request_id、错误处理
+    backend/app/providers       行情、基本面、SEC 和新闻 Provider
+    backend/app/scoring         确定性评分引擎
+    backend/app/rag             SEC 清洗、切块、embedding 和 Qdrant
+    backend/app/deep_research   Deep Research 图和运行时工厂
+    backend/app/workers         Redis / ARQ Worker 入口
+    frontend                    Next.js 中文研究工作台
+    docs                        架构、接口、RAG、部署和演示文档
+    deploy                      Linux 部署、备份和运维脚本
+    nginx                       生产反向代理配置
+    tools                       最终测试 Agent
+    reports                     测试报告
+
+## 生产部署
+
+Linux VPS 上线阶段使用 Docker Compose，包含 Nginx、Frontend、Backend、Worker、PostgreSQL、Qdrant 和 Redis。请阅读 docs/deployment.md，完成环境变量、HTTPS、健康检查、日志和备份配置后再部署。
+
+Vercel / Render 可以作为可选部署方式，但不是本项目的主要生产目标。
+
+## 开源协作
+
+欢迎提交 Issue、改进文档和 Pull Request。请先阅读 CONTRIBUTING.md。安全问题请按照 SECURITY.md 进行报告。
+
+## 路线图
+
+- 提升真实 Provider 的覆盖范围和缓存策略。
+- 增强 SEC 检索质量评估和引用可视化。
+- 完善 Worker 监控、重试、告警和生产运维。
+- 继续改进 Linux VPS 部署和可观测性。
+
+## 免责声明
+
+本项目仅用于工程展示、研究和教育，不构成投资建议。任何生成式分析都应由用户独立核验。
+
+## License
+
+MIT License，详见 LICENSE。
